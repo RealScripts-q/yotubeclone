@@ -88,12 +88,38 @@
     <div class="container">
         <div class="video-container" id="video-container"></div>
     </div>
+
+    <div class="video-player" id="video-player">
+        <iframe id="video-frame" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div class="video-details">
+            <h4 id="video-title"></h4>
+            <p id="video-description"></p>
+            <div class="channel">
+                <img src="" id="channel-icon" class="channel-icon" alt="">
+                <span id="channel-name"></span>
+            </div>
+            <div class="actions">
+                <button onclick="likeVideo()">Like</button>
+                <button onclick="dislikeVideo()">Dislike</button>
+                <button onclick="subscribe()">Subscribe</button>
+                <button onclick="comment()">Comment</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const videoContainer = document.getElementById('video-container');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
-        let api_key = "YOUR_YOUTUBE_API_KEY";
-        let video_http = "https://www.googleapis.com/youtube/v3/search?";
+        const videoPlayer = document.getElementById('video-player');
+        const videoFrame = document.getElementById('video-frame');
+        const videoTitle = document.getElementById('video-title');
+        const videoDescription = document.getElementById('video-description');
+        const channelName = document.getElementById('channel-name');
+        const channelIcon = document.getElementById('channel-icon');
+
+        const api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
+        const video_http = "https://www.googleapis.com/youtube/v3/search?";
 
         const fetchVideos = (query = "") => {
             videoContainer.innerHTML = "";
@@ -124,7 +150,21 @@
                     <p class="channel-name">${data.snippet.channelTitle}</p>
                 </div>
             `;
+            videoCard.onclick = () => openVideo(data);
             videoContainer.appendChild(videoCard);
+        };
+
+        const openVideo = (data) => {
+            videoPlayer.style.display = "block";
+            videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
+            videoTitle.innerText = data.snippet.title;
+            videoDescription.innerText = data.snippet.description;
+            channelName.innerText = data.snippet.channelTitle;
+            channelIcon.src = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${data.snippet.channelId}&key=${api_key}`
+                .then(res => res.json())
+                .then(channelData => {
+                    channelIcon.src = channelData.items[0].snippet.thumbnails.default.url;
+                });
         };
 
         searchBtn.addEventListener('click', () => {
@@ -133,6 +173,22 @@
                 fetchVideos(query);
             }
         });
+
+        const likeVideo = () => {
+            alert('Liked the video!');
+        };
+
+        const dislikeVideo = () => {
+            alert('Disliked the video!');
+        };
+
+        const subscribe = () => {
+            alert('Subscribed to the channel!');
+        };
+
+        const comment = () => {
+            alert('Opening comments section...');
+        };
     </script>
 </body>
 </html>
