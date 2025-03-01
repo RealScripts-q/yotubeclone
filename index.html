@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Clone - Channel Page</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,57 +78,6 @@
             width: 100%;
             height: 450px;
         }
-        .channel-page {
-            display: none;
-        }
-        .banner {
-            width: 100%;
-            height: 200px;
-            background-color: #ccc;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .channel-details {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        .channel-details img {
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            margin-right: 20px;
-        }
-        .subscribe-btn {
-            background-color: #ff0000;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .subscribe-btn:hover {
-            background-color: #cc0000;
-        }
-        .channel-video-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-        }
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .next-page {
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-        }
-        .next-page:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
@@ -138,154 +86,34 @@
         <button class="search-btn">Search</button>
     </header>
     <div class="container">
-        <div class="video-player" id="video-player">
-            <iframe id="video-frame" frameborder="0" allowfullscreen></iframe>
-            <h2 id="video-title"></h2>
-            <p id="video-description"></p>
-            <div class="channel-info">
-                <img id="channel-icon" src="" alt="Channel Icon">
-                <span id="channel-name"></span>
-            </div>
-            <div class="actions">
-                <button><img src="like.png" alt="Like"></button>
-                <button><img src="dislike.png" alt="Dislike"></button>
-                <button><img src="subscribe.png" alt="Subscribe"></button>
-                <button><img src="comment.png" alt="Comment"></button>
-            </div>
-        </div>
-
-        <!-- Channel Page Section (Initially hidden) -->
-        <div class="channel-page" id="channel-page">
-            <div class="banner" id="channel-banner"></div>
-            <div class="channel-details">
-                <img id="channel-profile" src="" alt="Channel Profile Picture">
-                <div>
-                    <h2 id="channel-title"></h2>
-                    <p id="channel-description"></p>
-                    <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
-                </div>
-            </div>
-            <div class="channel-video-list" id="channel-videos"></div>
-        </div>
-
-        <!-- Video List Section -->
         <div class="video-container" id="video-container"></div>
-        <div class="pagination" id="pagination"></div>
     </div>
-
     <script>
         const videoContainer = document.getElementById('video-container');
-        const videoPlayer = document.getElementById('video-player');
-        const videoFrame = document.getElementById('video-frame');
-        const videoTitle = document.getElementById('video-title');
-        const videoDescription = document.getElementById('video-description');
-        const channelIcon = document.getElementById('channel-icon');
-        const channelName = document.getElementById('channel-name');
-        const channelPage = document.getElementById('channel-page');
-        const channelBanner = document.getElementById('channel-banner');
-        const channelProfile = document.getElementById('channel-profile');
-        const channelTitle = document.getElementById('channel-title');
-        const channelDescription = document.getElementById('channel-description');
-        const channelVideos = document.getElementById('channel-videos');
-        const subscribeBtn = document.getElementById('subscribe-btn');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
-        const pagination = document.getElementById('pagination');
-
-        let api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
+        let api_key = "YOUR_YOUTUBE_API_KEY";
         let video_http = "https://www.googleapis.com/youtube/v3/search?";
-        let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
-        let playlist_http = "https://www.googleapis.com/youtube/v3/playlistItems?";
-        
-        let nextPageToken = null;
-        let nextPageTokenChannels = null;
 
-        // Fetch and display videos
         const fetchVideos = (query = "") => {
             videoContainer.innerHTML = "";
-            pagination.innerHTML = ""; // Clear pagination button
-
             let params = new URLSearchParams({
                 key: api_key,
                 part: 'snippet',
                 q: query,
-                maxResults: 60, // Show 60 videos per page
+                maxResults: 20,
                 type: 'video'
             });
-
-            if (nextPageToken) {
-                params.append('pageToken', nextPageToken);
-            }
-
             fetch(video_http + params)
             .then(res => res.json())
             .then(data => {
-                if (data.items.length === 0) {
-                    // No videos found, so let's search for channels
-                    fetchChannels(query);
-                } else {
-                    data.items.forEach(item => {
-                        getChannelIcon(item);
-                    });
-
-                    if (data.nextPageToken) {
-                        nextPageToken = data.nextPageToken;
-                        const nextPageButton = document.createElement('button');
-                        nextPageButton.textContent = 'Next Page';
-                        nextPageButton.classList.add('next-page');
-                        nextPageButton.addEventListener('click', () => {
-                            fetchVideos(query);
-                        });
-                        pagination.appendChild(nextPageButton);
-                    }
-                }
+                data.items.forEach(item => {
+                    makeVideoCard(item);
+                });
             })
             .catch(err => console.log(err));
         };
 
-        // Fetch channels based on query
-        const fetchChannels = (query = "") => {
-            videoContainer.innerHTML = "";
-            pagination.innerHTML = ""; // Clear pagination button
-
-            let params = new URLSearchParams({
-                key: api_key,
-                part: 'snippet',
-                q: query,
-                maxResults: 30, // Show 30 channels per page
-                type: 'channel'
-            });
-
-            if (nextPageTokenChannels) {
-                params.append('pageToken', nextPageTokenChannels);
-            }
-
-            fetch(video_http + params)
-            .then(res => res.json())
-            .then(data => {
-                if (data.items.length > 0) {
-                    data.items.forEach(item => {
-                        makeChannelCard(item);
-                    });
-
-                    if (data.nextPageToken) {
-                        nextPageTokenChannels = data.nextPageToken;
-                        const nextPageButton = document.createElement('button');
-                        nextPageButton.textContent = 'Next Page';
-                        nextPageButton.classList.add('next-page');
-                        nextPageButton.addEventListener('click', () => {
-                            fetchChannels(query);
-                        });
-                        pagination.appendChild(nextPageButton);
-                    }
-                } else {
-                    alert('No videos or channels found with that name.');
-                }
-            })
-            .catch(err => console.log(err));
-        };
-
-        // Make video card
         const makeVideoCard = (data) => {
             let videoCard = document.createElement('div');
             videoCard.classList.add('video');
@@ -296,98 +124,13 @@
                     <p class="channel-name">${data.snippet.channelTitle}</p>
                 </div>
             `;
-            videoCard.addEventListener('click', () => {
-                loadVideo(data);
-            });
             videoContainer.appendChild(videoCard);
         };
 
-        // Make channel card
-        const makeChannelCard = (data) => {
-            let channelCard = document.createElement('div');
-            channelCard.classList.add('video');
-            channelCard.innerHTML = `
-                <img src="${data.snippet.thumbnails.high.url}" class="thumbnail" alt="">
-                <div class="content">
-                    <h4 class="title">${data.snippet.title}</h4>
-                </div>
-            `;
-            channelCard.addEventListener('click', () => {
-                loadChannel(data.snippet.channelId);
-            });
-            videoContainer.appendChild(channelCard);
-        };
-
-        // Load the selected video
-        const loadVideo = (data) => {
-            videoPlayer.style.display = 'block';
-            videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
-            videoTitle.textContent = data.snippet.title;
-            videoDescription.textContent = data.snippet.description;
-            channelIcon.src = data.snippet.channelThumbnail.url;
-            channelName.textContent = data.snippet.channelTitle;
-        };
-
-        // Load the selected channel
-        const loadChannel = (channelId) => {
-            fetch(channel_http + new URLSearchParams({
-                key: api_key,
-                part: 'snippet',
-                id: channelId
-            }))
-            .then(res => res.json())
-            .then(data => {
-                const channel = data.items[0];
-                channelBanner.style.backgroundImage = `url(${channel.snippet.thumbnails.high.url})`;
-                channelProfile.src = channel.snippet.thumbnails.default.url;
-                channelTitle.textContent = channel.snippet.title;
-                channelDescription.textContent = channel.snippet.description;
-                channelPage.style.display = 'block';
-                fetchChannelVideos(channelId);
-            })
-            .catch(err => console.log(err));
-        };
-
-        // Fetch videos from the channel
-        const fetchChannelVideos = (channelId) => {
-            channelVideos.innerHTML = '';
-            fetch(playlist_http + new URLSearchParams({
-                key: api_key,
-                part: 'snippet',
-                maxResults: 90,
-                playlistId: `UU${channelId.slice(2)}` // Use the playlist ID for the channel
-            }))
-            .then(res => res.json())
-            .then(data => {
-                data.items.forEach(item => {
-                    makeVideoCard(item.snippet);
-                });
-            })
-            .catch(err => console.log(err));
-        };
-
-        // Search function
         searchBtn.addEventListener('click', () => {
             let query = searchInput.value.trim();
             if (query) {
-                if (query.startsWith('@')) {
-                    fetchChannels(query.slice(1)); // Search for channels
-                } else {
-                    fetchVideos(query); // Search for videos
-                }
-            }
-        });
-
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                let query = searchInput.value.trim();
-                if (query) {
-                    if (query.startsWith('@')) {
-                        fetchChannels(query.slice(1)); // Search for channels
-                    } else {
-                        fetchVideos(query); // Search for videos
-                    }
-                }
+                fetchVideos(query);
             }
         });
     </script>
