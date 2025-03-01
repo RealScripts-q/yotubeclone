@@ -58,6 +58,7 @@
             height: 40px;
             border-radius: 50%;
             margin-right: 10px;
+            cursor: pointer;
         }
         .actions button {
             background: none;
@@ -142,10 +143,10 @@
             videoCard.innerHTML = `
                 <img src="${data.snippet.thumbnails.high.url}" class="thumbnail" alt="">
                 <div class="content">
-                    <img src="${data.channelThumbnail}" class="channel-icon" alt="">
+                    <img src="${data.channelThumbnail}" class="channel-icon" alt="" data-channel-id="${data.snippet.channelId}">
                     <div class="info">
                         <h4 class="title">${data.snippet.title}</h4>
-                        <p class="channel-name">${data.snippet.channelTitle}</p>
+                        <p class="channel-name" data-channel-id="${data.snippet.channelId}">${data.snippet.channelTitle}</p>
                     </div>
                 </div>
             `;
@@ -161,7 +162,12 @@
             videoDescription.textContent = data.snippet.description;
             channelIcon.src = data.channelThumbnail;
             channelName.textContent = data.snippet.channelTitle;
+            channelName.dataset.channelId = data.snippet.channelId;
         };
+        
+        channelName.addEventListener('click', () => {
+            fetchVideos(channelName.dataset.channelId);
+        });
         
         searchBtn.addEventListener('click', () => {
             if (searchInput.value.length) {
