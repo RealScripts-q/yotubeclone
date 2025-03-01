@@ -4,12 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Youtube Clone</title>
-
     <link rel="stylesheet" href="style.css">
-
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+        }
+        .video-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+            margin-top: 60px;
+        }
+        .video {
+            cursor: pointer;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .video img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        #video-player {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        .video-actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        .video-actions button {
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #like-btn { background: #ff0000; color: white; }
+        #subscribe-btn { background: #0088ff; color: white; }
+        #close-btn { background: #333; color: white; }
+    </style>
 </head>
 <body>
-
     <nav class="navbar">
         <div class="toggle-btn">
             <span></span>
@@ -30,51 +81,66 @@
             </div>
         </div>
     </nav>
-
-    <!-- sidebar -->
+    
     <div class="side-bar">
         <a href="#" class="links active"><img src="img/home.PNG" alt="">home</a>
         <a href="#" class="links"><img src="img/explore.PNG" alt="">explore</a>
         <a href="#" class="links"><img src="img/subscription.PNG" alt="">subscription</a>
-        <hr class="seperator">
-        <a href="#" class="links"><img src="img/library.PNG" alt="">library</a>
-        <a href="#" class="links"><img src="img/history.PNG" alt="">history</a>
-        <a href="#" class="links"><img src="img/your-video.PNG" alt="">your video</a>
-        <a href="#" class="links"><img src="img/watch-later.PNG" alt="">watch leater</a>
-        <a href="#" class="links"><img src="img/liked video.PNG" alt="">like video</a>
-        <a href="#" class="links"><img src="img/show more.PNG" alt="">show more</a>
     </div>
-
-    <!-- filters -->
-    <div class="filters">
-        <button class="filter-options active">all</button>
-        <button class="filter-options">CSS</button>
-        <button class="filter-options">web development</button>
-        <button class="filter-options">python</button>
-        <button class="filter-options">entertainment</button>
-        <button class="filter-options">marvel</button>
-        <button class="filter-options">javascript</button>
-        <button class="filter-options">artificial intelligence</button>
-        <button class="filter-options">machine learning</button>
-        <button class="filter-options">trending</button>
-    </div>
-
-    <!-- videos -->
-    <div class="video-container">
-        <!-- <div class="video">
-            <img src="img/profile-pic.png" class="thumbnail" alt="">
-            <div class="content">
-                <img src="img/profile-pic.png" class="channel-icon" alt="">
-                <div class="info">
-                    <h4 class="title">youtube clone 2021 | create working youtube clone</h4>
-                    <p class="channel-name">modern web</p>
-                </div>
-            </div>
-        </div> -->
-    </div>
-
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="app.js"></script>
     
+    <div class="video-container"></div>
+    
+    <div id="video-player">
+        <iframe id="player" width="560" height="315" frameborder="0" allowfullscreen></iframe>
+        <div class="video-actions">
+            <button id="like-btn">Like</button>
+            <button id="subscribe-btn">Subscribe</button>
+            <button id="close-btn">Close</button>
+        </div>
+    </div>
+    
+    <script>
+        const videoContainer = document.querySelector('.video-container');
+        const videoPlayer = document.getElementById('video-player');
+        const player = document.getElementById('player');
+        const closeBtn = document.getElementById('close-btn');
+        let api_key = "YOUR_API_KEY";
+        let video_http = "https://www.googleapis.com/youtube/v3/videos?";
+        
+        fetch(video_http + new URLSearchParams({
+            key: api_key,
+            part: 'snippet',
+            chart: 'mostPopular',
+            maxResults: 10,
+            regionCode: 'US'
+        }))
+        .then(res => res.json())
+        .then(data => {
+            data.items.forEach(item => {
+                createVideoCard(item);
+            });
+        })
+        .catch(err => console.log(err));
+        
+        function createVideoCard(videoData) {
+            let video = document.createElement('div');
+            video.classList.add('video');
+            video.innerHTML = `
+                <img src="${videoData.snippet.thumbnails.high.url}" class="thumbnail" alt="">
+                <h4>${videoData.snippet.title}</h4>
+                <p>${videoData.snippet.channelTitle}</p>
+            `;
+            video.addEventListener('click', () => {
+                player.src = `https://www.youtube.com/embed/${videoData.id}`;
+                videoPlayer.style.display = 'block';
+            });
+            videoContainer.appendChild(video);
+        }
+        
+        closeBtn.addEventListener('click', () => {
+            videoPlayer.style.display = 'none';
+            player.src = "";
+        });
+    </script>
 </body>
 </html>
