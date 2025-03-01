@@ -32,12 +32,9 @@
             margin: 20px auto;
             flex-wrap: wrap;
         }
-        .video-player {
-            flex: 3;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        /* Channel Page - Initially hidden */
+        .channel-page {
+            display: none;
         }
         .video-container {
             flex: 1;
@@ -71,15 +68,6 @@
             padding: 10px;
         }
         /* New styles for channel page */
-        .channel-page {
-            width: 100%;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            display: block;
-            margin-bottom: 20px;
-        }
         .banner {
             width: 100%;
             height: 200px;
@@ -113,14 +101,21 @@
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
-        .channel-page.full-screen {
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #fff;
-            z-index: 1000;
+        /* Video Player - Positioned at the top-left */
+        .video-player {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 800px;
+            display: none;
+        }
+        .video-player iframe {
+            width: 100%;
+            height: 450px;
         }
     </style>
 </head>
@@ -130,23 +125,9 @@
         <button class="search-btn">Search</button>
     </header>
     <div class="container">
-        <!-- Channel Page Section -->
-        <div class="channel-page" id="channel-page">
-            <div class="banner" id="channel-banner"></div>
-            <div class="channel-details">
-                <img id="channel-profile" src="" alt="Channel Profile Picture">
-                <div>
-                    <h2 id="channel-title"></h2>
-                    <p id="channel-description"></p>
-                    <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
-                </div>
-            </div>
-            <div class="channel-video-list" id="channel-videos"></div>
-        </div>
-
         <!-- Video Player Section -->
-        <div class="video-player">
-            <iframe id="video-frame" width="800" height="450" src="" frameborder="0" allowfullscreen></iframe>
+        <div class="video-player" id="video-player">
+            <iframe id="video-frame" frameborder="0" allowfullscreen></iframe>
             <h2 id="video-title"></h2>
             <p id="video-description"></p>
             <div class="channel-info">
@@ -160,10 +141,33 @@
                 <button><img src="comment.png" alt="Comment"></button>
             </div>
         </div>
+
+        <!-- Channel Page Section (Initially hidden) -->
+        <div class="channel-page" id="channel-page">
+            <div class="banner" id="channel-banner"></div>
+            <div class="channel-details">
+                <img id="channel-profile" src="" alt="Channel Profile Picture">
+                <div>
+                    <h2 id="channel-title"></h2>
+                    <p id="channel-description"></p>
+                    <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
+                </div>
+            </div>
+            <div class="channel-video-list" id="channel-videos"></div>
+        </div>
+
+        <!-- Video List Section -->
+        <div class="video-container" id="video-container"></div>
     </div>
-    
+
     <script>
-        const videoCardContainer = document.querySelector('.video-container');
+        const videoContainer = document.getElementById('video-container');
+        const videoPlayer = document.getElementById('video-player');
+        const videoFrame = document.getElementById('video-frame');
+        const videoTitle = document.getElementById('video-title');
+        const videoDescription = document.getElementById('video-description');
+        const channelIcon = document.getElementById('channel-icon');
+        const channelName = document.getElementById('channel-name');
         const channelPage = document.getElementById('channel-page');
         const channelBanner = document.getElementById('channel-banner');
         const channelProfile = document.getElementById('channel-profile');
@@ -171,11 +175,6 @@
         const channelDescription = document.getElementById('channel-description');
         const channelVideos = document.getElementById('channel-videos');
         const subscribeBtn = document.getElementById('subscribe-btn');
-        const videoFrame = document.getElementById('video-frame');
-        const videoTitle = document.getElementById('video-title');
-        const videoDescription = document.getElementById('video-description');
-        const channelIcon = document.getElementById('channel-icon');
-        const channelName = document.getElementById('channel-name');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
 
@@ -184,8 +183,9 @@
         let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
         let playlist_http = "https://www.googleapis.com/youtube/v3/playlistItems?";
 
+        // Fetch and display videos
         const fetchVideos = (query = "") => {
-            videoCardContainer.innerHTML = "";
+            videoContainer.innerHTML = "";
             fetch(video_http + new URLSearchParams({
                 key: api_key,
                 part: 'snippet',
@@ -202,6 +202,7 @@
             .catch(err => console.log(err));
         };
 
+        // Fetch channel icon
         const getChannelIcon = (video_data) => {
             fetch(channel_http + new URLSearchParams({
                 key: api_key,
@@ -215,6 +216,7 @@
             });
         };
 
+        // Create and display video card
         const makeVideoCard = (data) => {
             let videoCard = document.createElement('div');
             videoCard.classList.add('video');
@@ -231,22 +233,55 @@
             videoCard.addEventListener('click', () => {
                 loadVideo(data);
             });
-            videoCardContainer.appendChild(videoCard);
+            videoContainer.appendChild(videoCard);
         };
 
+        // Load video on click
         const loadVideo = (data) => {
+            // Show video player at the top-left
+            videoPlayer.style.display = 'block';
             videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
             videoTitle.textContent = data.snippet.title;
             videoDescription.textContent = data.snippet.description;
             channelIcon.src = data.channelThumbnail;
             channelName.textContent = data.snippet.channelTitle;
             channelName.dataset.channelId = data.snippet.channelId;
+
+            // Hide the channel page
+            channelPage.style.display = 'none';
         };
 
-        channelName.addEventListener('click', () => {
-            fetchChannelPage(channelName.dataset.channelId);
-        });
+        // Search for videos or channels
+        const searchChannel = () => {
+            let searchQuery = searchInput.value.trim();
+            if (searchQuery.startsWith('@')) {
+                const channelName = searchQuery.slice(1);
+                fetchChannelPageByName(channelName);
+            } else {
+                fetchVideos(searchQuery);
+            }
+        };
 
+        // Fetch channel page by name
+        const fetchChannelPageByName = (channelName) => {
+            fetch(channel_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet,contentDetails',
+                forUsername: channelName
+            }))
+            .then(res => res.json())
+            .then(data => {
+                if (data.items.length > 0) {
+                    const channelId = data.items[0].id;
+                    fetchChannelPage(channelId);
+                } else {
+                    alert('Channel not found');
+                }
+            })
+            .catch(err => console.log(err));
+        };
+
+        // Fetch and display channel page
         const fetchChannelPage = (channelId) => {
             fetch(channel_http + new URLSearchParams({
                 key: api_key,
@@ -266,6 +301,7 @@
             .catch(err => console.log(err));
         };
 
+        // Load videos from channel's playlist
         const loadChannelVideos = (channelId) => {
             channelVideos.innerHTML = "";
             fetch(playlist_http + new URLSearchParams({
@@ -279,35 +315,6 @@
                 data.items.forEach(item => {
                     makeVideoCard(item.snippet);
                 });
-            })
-            .catch(err => console.log(err));
-        };
-
-        const searchChannel = () => {
-            let searchQuery = searchInput.value.trim();
-            if (searchQuery.startsWith('@')) {
-                // Extract channel name after @ symbol
-                const channelName = searchQuery.slice(1);
-                fetchChannelPageByName(channelName);
-            } else {
-                fetchVideos(searchQuery);
-            }
-        };
-
-        const fetchChannelPageByName = (channelName) => {
-            fetch(channel_http + new URLSearchParams({
-                key: api_key,
-                part: 'snippet,contentDetails',
-                forUsername: channelName
-            }))
-            .then(res => res.json())
-            .then(data => {
-                if (data.items.length > 0) {
-                    const channelId = data.items[0].id;
-                    fetchChannelPage(channelId);
-                } else {
-                    alert('Channel not found');
-                }
             })
             .catch(err => console.log(err));
         };
