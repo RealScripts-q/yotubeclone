@@ -3,151 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube-Style Video Modal</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f9f9f9;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
-        /* Video Section */
-        .video-section {
-            width: 65%;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        #player {
-            width: 100%;
-            height: 350px;
-            border-radius: 10px;
-        }
-        .video-details {
-            margin-top: 10px;
-        }
-        .video-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .video-actions button {
-            margin: 5px;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #likeBtn { background: red; color: white; }
-        #subscribeBtn { background: blue; color: white; }
-        #commentBtn { background: green; color: white; }
-
-        /* Recommended Videos */
-        .recommended {
-            width: 30%;
-        }
-        .recommended-video {
-            display: flex;
-            margin-bottom: 10px;
-            cursor: pointer;
-            align-items: center;
-        }
-        .recommended-video img {
-            width: 120px;
-            border-radius: 8px;
-        }
-        .video-info {
-            margin-left: 10px;
-        }
-        .video-info p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-    </style>
+    <title>YouTube Clone</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
+    <header>
+        <input type="text" class="search-bar" placeholder="Search...">
+        <button class="search-btn">Search</button>
+    </header>
     <div class="container">
-        <!-- Video Player Section -->
-        <div class="video-section">
-            <div id="player"></div>
-            <div class="video-details">
-                <p class="video-title">How to Make a Folder in GitHub Repository</p>
-                <div class="video-actions">
-                    <button id="likeBtn">Like</button>
-                    <button id="subscribeBtn">Subscribe</button>
-                    <button id="commentBtn">Comment</button>
-                </div>
+        <div class="video-player">
+            <iframe id="video-frame" width="800" height="450" src="" frameborder="0" allowfullscreen></iframe>
+            <h2 id="video-title"></h2>
+            <p id="video-description"></p>
+            <div class="channel-info">
+                <img id="channel-icon" src="" alt="Channel Icon">
+                <span id="channel-name"></span>
+            </div>
+            <div class="actions">
+                <button>Like</button>
+                <button>Dislike</button>
+                <button>Subscribe</button>
+                <button>Comment</button>
             </div>
         </div>
-
-        <!-- Recommended Videos -->
-        <div class="recommended">
-            <h3>Recommended</h3>
-            <div class="recommended-video" onclick="loadVideo('3JZ_D3ELwOQ', 'Learn GitHub Basics')">
-                <img src="https://img.youtube.com/vi/3JZ_D3ELwOQ/0.jpg" alt="Video 2">
-                <div class="video-info">
-                    <p>Learn GitHub Basics</p>
-                    <p>1.2M views</p>
-                </div>
-            </div>
-            <div class="recommended-video" onclick="loadVideo('kxqZLVhDyVc', 'Git & GitHub Tutorial')">
-                <img src="https://img.youtube.com/vi/kxqZLVhDyVc/0.jpg" alt="Video 3">
-                <div class="video-info">
-                    <p>Git & GitHub Tutorial</p>
-                    <p>500K views</p>
-                </div>
-            </div>
-        </div>
+        <div class="video-container"></div>
     </div>
-
+    
     <script>
-        let player;
+        const videoCardContainer = document.querySelector('.video-container');
+        const videoFrame = document.getElementById('video-frame');
+        const videoTitle = document.getElementById('video-title');
+        const videoDescription = document.getElementById('video-description');
+        const channelIcon = document.getElementById('channel-icon');
+        const channelName = document.getElementById('channel-name');
         
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '350',
-                width: '100%',
-                videoId: 'dQw4w9WgXcQ',  // Default video
-                playerVars: { 'autoplay': 1, 'controls': 1 },
-                events: {
-                    'onReady': onPlayerReady
-                }
+        let api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
+        let video_http = "https://www.googleapis.com/youtube/v3/videos?";
+        let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
+        
+        fetch(video_http + new URLSearchParams({
+            key: api_key,
+            part: 'snippet',
+            chart: 'mostPopular',
+            maxResults: 10,
+            regionCode: 'US'
+        }))
+        .then(res => res.json())
+        .then(data => {
+            data.items.forEach(item => {
+                getChannelIcon(item);
             });
-        }
-
-        function onPlayerReady(event) {
-            event.target.playVideo();
-        }
-
-        function loadVideo(videoId, title) {
-            player.loadVideoById(videoId);
-            document.querySelector('.video-title').textContent = title;
-        }
-
-        document.getElementById('likeBtn').addEventListener('click', function() {
-            alert('You liked this video!');
+        })
+        .catch(err => console.log(err));
+        
+        const getChannelIcon = (video_data) => {
+            fetch(channel_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet',
+                id: video_data.snippet.channelId
+            }))
+            .then(res => res.json())
+            .then(data => {
+                video_data.channelThumbnail = data.items[0].snippet.thumbnails.default.url;
+                makeVideoCard(video_data);
+            })
+        };
+        
+        const makeVideoCard = (data) => {
+            let videoCard = document.createElement('div');
+            videoCard.classList.add('video');
+            videoCard.innerHTML = `
+                <img src="${data.snippet.thumbnails.high.url}" class="thumbnail" alt="">
+                <div class="content">
+                    <img src="${data.channelThumbnail}" class="channel-icon" alt="">
+                    <div class="info">
+                        <h4 class="title">${data.snippet.title}</h4>
+                        <p class="channel-name">${data.snippet.channelTitle}</p>
+                    </div>
+                </div>
+            `;
+            videoCard.addEventListener('click', () => {
+                loadVideo(data);
+            });
+            videoCardContainer.appendChild(videoCard);
+        };
+        
+        const loadVideo = (data) => {
+            videoFrame.src = `https://www.youtube.com/embed/${data.id}`;
+            videoTitle.textContent = data.snippet.title;
+            videoDescription.textContent = data.snippet.description;
+            channelIcon.src = data.channelThumbnail;
+            channelName.textContent = data.snippet.channelTitle;
+        };
+        
+        const searchInput = document.querySelector('.search-bar');
+        const searchBtn = document.querySelector('.search-btn');
+        let searchLink = "https://www.youtube.com/results?search_query=";
+        
+        searchBtn.addEventListener('click', () => {
+            if (searchInput.value.length) {
+                location.href = searchLink + searchInput.value;
+            }
         });
-
-        document.getElementById('subscribeBtn').addEventListener('click', function() {
-            alert('Subscribed to the channel!');
-        });
-
-        document.getElementById('commentBtn').addEventListener('click', function() {
-            alert('Redirecting to comments section.');
-            window.open(`https://www.youtube.com/watch?v=${player.getVideoData().video_id}#comments`, '_blank');
-        });
-
-        // Load YouTube API Script
-        const script = document.createElement('script');
-        script.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(script);
     </script>
-
 </body>
 </html>
