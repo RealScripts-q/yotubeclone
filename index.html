@@ -5,6 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Clone</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+        .search-bar {
+            flex-grow: 1;
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        .video-player {
+            flex: 3;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .video-container {
+            flex: 1;
+            margin-left: 20px;
+        }
+        .video {
+            display: flex;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .thumbnail {
+            width: 120px;
+            height: 70px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .channel-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -21,10 +82,10 @@
                 <span id="channel-name"></span>
             </div>
             <div class="actions">
-                <button>Like</button>
-                <button>Dislike</button>
-                <button>Subscribe</button>
-                <button>Comment</button>
+                <button><img src="like.png" alt="Like"></button>
+                <button><img src="dislike.png" alt="Dislike"></button>
+                <button><img src="subscribe.png" alt="Subscribe"></button>
+                <button><img src="comment.png" alt="Comment"></button>
             </div>
         </div>
         <div class="video-container"></div>
