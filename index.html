@@ -115,6 +115,21 @@
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .next-page {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+        }
+        .next-page:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +170,7 @@
 
         <!-- Video List Section -->
         <div class="video-container" id="video-container"></div>
+        <div class="pagination" id="pagination"></div>
     </div>
 
     <script>
@@ -174,27 +190,49 @@
         const subscribeBtn = document.getElementById('subscribe-btn');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
+        const pagination = document.getElementById('pagination');
 
         let api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let video_http = "https://www.googleapis.com/youtube/v3/search?";
         let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
         let playlist_http = "https://www.googleapis.com/youtube/v3/playlistItems?";
+        
+        let nextPageToken = null;
 
         // Fetch and display videos
         const fetchVideos = (query = "") => {
             videoContainer.innerHTML = "";
-            fetch(video_http + new URLSearchParams({
+            pagination.innerHTML = ""; // Clear pagination button
+
+            let params = new URLSearchParams({
                 key: api_key,
                 part: 'snippet',
                 q: query,
                 maxResults: 90, // Show 90 videos per page
                 type: 'video'
-            }))
+            });
+
+            if (nextPageToken) {
+                params.append('pageToken', nextPageToken);
+            }
+
+            fetch(video_http + params)
             .then(res => res.json())
             .then(data => {
                 data.items.forEach(item => {
                     getChannelIcon(item);
                 });
+                
+                if (data.nextPageToken) {
+                    nextPageToken = data.nextPageToken;
+                    const nextPageButton = document.createElement('button');
+                    nextPageButton.textContent = 'Next Page';
+                    nextPageButton.classList.add('next-page');
+                    nextPageButton.addEventListener('click', () => {
+                        fetchVideos(query);
+                    });
+                    pagination.appendChild(nextPageButton);
+                }
             })
             .catch(err => console.log(err));
         };
@@ -261,50 +299,33 @@
 
         // Fetch channel page by name
         const fetchChannelPageByName = (channelName) => {
-            fetch(channel_http + new URLSearchParams({
+            fetch(video_http + new URLSearchParams({
                 key: api_key,
-                part: 'snippet,contentDetails',
-                forUsername: channelName
+                part: 'snippet',
+                q: channelName,
+                maxResults: 1,
+                type: 'channel'
             }))
             .then(res => res.json())
             .then(data => {
-                if (data.items.length > 0) {
-                    const channelId = data.items[0].id;
-                    fetchChannelPage(channelId);
-                } else {
-                    alert('Channel not found');
-                }
+                const channelData = data.items[0];
+                channelBanner.style.backgroundImage = `url(${channelData.snippet.thumbnails.high.url})`;
+                channelProfile.src = channelData.snippet.thumbnails.default.url;
+                channelTitle.textContent = channelData.snippet.title;
+                channelDescription.textContent = channelData.snippet.description;
+                channelPage.style.display = 'block'; // Show the channel page
+                fetchChannelVideos(channelData.id.channelId);
             })
             .catch(err => console.log(err));
         };
 
-        // Fetch and display channel page
-        const fetchChannelPage = (channelId) => {
-            fetch(channel_http + new URLSearchParams({
-                key: api_key,
-                part: 'snippet,contentDetails',
-                id: channelId
-            }))
-            .then(res => res.json())
-            .then(data => {
-                const channelData = data.items[0].snippet;
-                const bannerUrl = channelData.thumbnails.maxres ? channelData.thumbnails.maxres.url : channelData.thumbnails.high.url;
-                channelBanner.style.backgroundImage = `url(${bannerUrl})`;
-                channelProfile.src = channelData.thumbnails.default.url;
-                channelTitle.textContent = channelData.title;
-                channelDescription.textContent = channelData.description;
-                loadChannelVideos(channelId);
-            })
-            .catch(err => console.log(err));
-        };
-
-        // Load videos from channel's playlist
-        const loadChannelVideos = (channelId) => {
-            channelVideos.innerHTML = "";
+        // Fetch videos from the channel
+        const fetchChannelVideos = (channelId) => {
+            channelVideos.innerHTML = ''; // Clear previous videos
             fetch(playlist_http + new URLSearchParams({
                 key: api_key,
                 part: 'snippet',
-                maxResults: 10,
+                maxResults: 90,
                 playlistId: channelId
             }))
             .then(res => res.json())
@@ -317,7 +338,9 @@
         };
 
         searchBtn.addEventListener('click', searchChannel);
-
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') searchChannel();
+        });
     </script>
 </body>
 </html>
