@@ -3,403 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Youtube Clone</title>
+    <title>YouTube-Style Video Modal</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: #f0f0f0;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        /* Navbar Styles */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            padding: 0 2.5vw;
-        }
-
-        .toggle-btn {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .toggle-btn span {
-            width: 25px;
-            height: 4px;
-            background: #333;
-        }
-
-        .logo {
-            width: 100px;
-            margin-left: 10px;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            margin-left: 10px;
-        }
-
-        .search-bar {
-            width: 100%;
-            height: 35px;
-            padding: 0 15px;
-            border-radius: 20px;
-            border: 1px solid #ccc;
-        }
-
-        .search-btn {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-
-        .search-btn img {
-            width: 20px;
-        }
-
-        .user-options {
-            display: flex;
-            gap: 20px;
-            margin-left: auto;
-        }
-
-        .icon {
-            width: 25px;
-            cursor: pointer;
-        }
-
-        .user-dp img {
-            width: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        /* Sidebar Styles */
-        .side-bar {
-            position: fixed;
-            top: 60px;
-            left: 0;
-            width: 200px;
-            background: #fff;
-            padding-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-left: 15px;
-        }
-
-        .links {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #333;
-            text-decoration: none;
-        }
-
-        .links:hover {
-            background-color: #f5f5f5;
-        }
-
-        .seperator {
-            margin-top: 20px;
-            border-top: 1px solid #ccc;
-        }
-
-        /* Video Card Styles */
-        .video-container {
-            margin-left: 220px;
-            padding-top: 80px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            margin: 0;
             padding: 20px;
         }
-
-        .video {
-            cursor: pointer;
+        .container {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background-color: #fff;
+            justify-content: center;
+            gap: 20px;
+        }
+        /* Video Section */
+        .video-section {
+            width: 65%;
+            background: white;
+            padding: 15px;
             border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-
-        .thumbnail {
+        iframe {
             width: 100%;
-            height: 180px;
-            object-fit: cover;
+            height: 350px;
+            border-radius: 10px;
         }
-
-        .content {
-            display: flex;
-            gap: 10px;
-            padding: 10px;
+        .video-details {
+            margin-top: 10px;
         }
-
-        .channel-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-
-        .info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .title {
-            font-size: 16px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .channel-name {
-            font-size: 14px;
-            color: #555;
-        }
-
-        /* Modal Styles */
-        .video-modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            padding-top: 60px;
-        }
-
-        .modal-content {
-            position: relative;
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 20px;
-            width: 80%;
-            max-width: 800px;
-        }
-
-        #videoIframe {
-            width: 100%;
-            height: 450px;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 0;
-            right: 25px;
-            font-size: 40px;
+        .video-title {
+            font-size: 18px;
             font-weight: bold;
-            color: #aaa;
-            cursor: pointer;
         }
-
-        .video-actions {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
-
         .video-actions button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+            margin: 5px;
+            padding: 10px;
             border: none;
-            background-color: #242424;
-            color: white;
             border-radius: 5px;
+            cursor: pointer;
         }
+        #likeBtn { background: red; color: white; }
+        #subscribeBtn { background: blue; color: white; }
+        #commentBtn { background: green; color: white; }
 
-        .video-actions button:hover {
-            background-color: #444;
+        /* Recommended Videos */
+        .recommended {
+            width: 30%;
         }
-
-        /* Filters */
-        .filters {
+        .recommended-video {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 20px 0;
-            padding-left: 220px;
-        }
-
-        .filter-options {
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 5px;
+            margin-bottom: 10px;
             cursor: pointer;
-            background-color: #e6e6e6;
-            border: none;
+            align-items: center;
         }
-
-        .filter-options.active {
-            background-color: #1e88e5;
-            color: #fff;
+        .recommended-video img {
+            width: 120px;
+            border-radius: 8px;
+        }
+        .video-info {
+            margin-left: 10px;
+        }
+        .video-info p {
+            margin: 5px 0;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="toggle-btn">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2d/YouTube_logo_2015.svg" class="logo" alt="Logo">
-        <div class="search-box">
-            <input type="text" class="search-bar" placeholder="Search">
-            <button class="search-btn"><img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Font_Awesome_5_regular_search.svg" alt="Search"></button>
-        </div>
-        <div class="user-options">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/YouTube_icon_%282013-2017%29.png" class="icon" alt="">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/e/eb/YouTube_play_button_2017.svg" class="icon" alt="">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/9/99/YouTube_Bell_Icon_2017.png" class="icon" alt="">
-            <div class="user-dp">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/1/1e/Default-avatar.jpg" alt="User DP">
+    <div class="container">
+        <!-- Video Player Section -->
+        <div class="video-section">
+            <iframe id="videoIframe" src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+            <div class="video-details">
+                <p class="video-title">How to Make a Folder in GitHub Repository</p>
+                <div class="video-actions">
+                    <button id="likeBtn">Like</button>
+                    <button id="subscribeBtn">Subscribe</button>
+                    <button id="commentBtn">Comment</button>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Sidebar -->
-    <div class="side-bar">
-        <a href="#" class="links active"><img src="https://upload.wikimedia.org/wikipedia/commons/4/45/YouTube_icon_2017.svg" alt="">Home</a>
-        <a href="#" class="links"><img src="https://upload.wikimedia.org/wikipedia/commons/0/08/YouTube_Logo_2017.svg" alt="">Explore</a>
-        <a href="#" class="links"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/YouTube_Logo_2017_Gray.svg" alt="">Subscription</a>
-        <hr class="seperator">
-        <a href="#" class="links"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/YouTube_Library.svg" alt="">Library</a>
-        <a href="#" class="links"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/YouTube_History_Icon.svg" alt="">History</a>
-        <a href="#" class="links"><img src="https://upload.wikimedia.org/wikipedia/commons/4/43/YouTube_Later_Icon.svg" alt="">Watch Later</a>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters">
-        <button class="filter-options active">All</button>
-        <button class="filter-options">CSS</button>
-        <button class="filter-options">Web Development</button>
-        <button class="filter-options">JavaScript</button>
-    </div>
-
-    <!-- Video Cards -->
-    <div class="video-container">
-        <!-- Video cards will be added here dynamically -->
-    </div>
-
-    <!-- Video Modal -->
-    <div id="videoModal" class="video-modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <iframe id="videoIframe" width="560" height="315" src="" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <div class="video-actions">
-                <button id="likeBtn">Like</button>
-                <button id="subscribeBtn">Subscribe</button>
-                <button id="commentBtn">Comment</button>
+        <!-- Recommended Videos -->
+        <div class="recommended">
+            <h3>Recommended</h3>
+            <div class="recommended-video" onclick="changeVideo('3JZ_D3ELwOQ')">
+                <img src="https://img.youtube.com/vi/3JZ_D3ELwOQ/0.jpg" alt="Video 2">
+                <div class="video-info">
+                    <p>Learn GitHub Basics</p>
+                    <p>1.2M views</p>
+                </div>
+            </div>
+            <div class="recommended-video" onclick="changeVideo('kxqZLVhDyVc')">
+                <img src="https://img.youtube.com/vi/kxqZLVhDyVc/0.jpg" alt="Video 3">
+                <div class="video-info">
+                    <p>Git & GitHub Tutorial</p>
+                    <p>500K views</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const videoCardContainer = document.querySelector('.video-container');
-        const videoModal = document.getElementById('videoModal');
-        const videoIframe = document.getElementById('videoIframe');
-        const likeBtn = document.getElementById('likeBtn');
-        const subscribeBtn = document.getElementById('subscribeBtn');
-        const commentBtn = document.getElementById('commentBtn');
-
-        const api_key = 'AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM';
-        const video_http = 'https://www.googleapis.com/youtube/v3/videos?';
-        const channel_http = 'https://www.googleapis.com/youtube/v3/channels?';
-
-        // Fetch popular videos
-        fetch(video_http + new URLSearchParams({
-            key: api_key,
-            part: 'snippet',
-            chart: 'mostPopular',
-            maxResults: 6,
-            regionCode: 'IN'
-        }))
-        .then(res => res.json())
-        .then(data => {
-            data.items.forEach(item => {
-                getChannelIcon(item);
-            })
-        })
-        .catch(err => console.log(err));
-
-        // Fetch channel icon
-        const getChannelIcon = (video_data) => {
-            fetch(channel_http + new URLSearchParams({
-                key: api_key,
-                part: 'snippet',
-                id: video_data.snippet.channelId
-            }))
-            .then(res => res.json())
-            .then(data => {
-                video_data.channelThumbnail = data.items[0].snippet.thumbnails.default.url;
-                makeVideoCard(video_data);
-            })
+        function changeVideo(videoId) {
+            document.getElementById('videoIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
         }
 
-        // Create video card
-        const makeVideoCard = (data) => {
-            videoCardContainer.innerHTML += `
-            <div class="video" onclick="openVideoModal('${data.id}')">
-                <img src="${data.snippet.thumbnails.high.url}" class="thumbnail" alt="">
-                <div class="content">
-                    <img src="${data.channelThumbnail}" class="channel-icon" alt="">
-                    <div class="info">
-                        <h4 class="title">${data.snippet.title}</h4>
-                        <p class="channel-name">${data.snippet.channelTitle}</p>
-                    </div>
-                </div>
-            </div>
-            `;
-        }
-
-        // Open video modal
-        const openVideoModal = (videoId) => {
-            videoIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-            videoModal.style.display = 'block';
-        }
-
-        // Close modal
-        const closeModal = () => {
-            videoModal.style.display = 'none';
-            videoIframe.src = '';
-        }
-
-        // Button actions
-        likeBtn.addEventListener('click', () => {
+        document.getElementById('likeBtn').addEventListener('click', function() {
             alert('You liked this video!');
         });
 
-        subscribeBtn.addEventListener('click', () => {
+        document.getElementById('subscribeBtn').addEventListener('click', function() {
             alert('Subscribed to the channel!');
         });
 
-        commentBtn.addEventListener('click', () => {
+        document.getElementById('commentBtn').addEventListener('click', function() {
             alert('Redirecting to comments section.');
-            location.href = `https://www.youtube.com/watch?v=${videoIframe.src.split('/')[4]}#comments`;
+            window.open(`https://www.youtube.com/watch?v=${document.getElementById('videoIframe').src.split('/')[4]}#comments`, '_blank');
         });
     </script>
 
