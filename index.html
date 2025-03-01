@@ -37,25 +37,30 @@
         const videoDescription = document.getElementById('video-description');
         const channelIcon = document.getElementById('channel-icon');
         const channelName = document.getElementById('channel-name');
+        const searchInput = document.querySelector('.search-bar');
+        const searchBtn = document.querySelector('.search-btn');
         
         let api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
-        let video_http = "https://www.googleapis.com/youtube/v3/videos?";
+        let video_http = "https://www.googleapis.com/youtube/v3/search?";
         let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
         
-        fetch(video_http + new URLSearchParams({
-            key: api_key,
-            part: 'snippet',
-            chart: 'mostPopular',
-            maxResults: 10,
-            regionCode: 'US'
-        }))
-        .then(res => res.json())
-        .then(data => {
-            data.items.forEach(item => {
-                getChannelIcon(item);
-            });
-        })
-        .catch(err => console.log(err));
+        const fetchVideos = (query = "") => {
+            videoCardContainer.innerHTML = "";
+            fetch(video_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet',
+                q: query,
+                maxResults: 10,
+                type: 'video'
+            }))
+            .then(res => res.json())
+            .then(data => {
+                data.items.forEach(item => {
+                    getChannelIcon(item);
+                });
+            })
+            .catch(err => console.log(err));
+        };
         
         const getChannelIcon = (video_data) => {
             fetch(channel_http + new URLSearchParams({
@@ -67,7 +72,7 @@
             .then(data => {
                 video_data.channelThumbnail = data.items[0].snippet.thumbnails.default.url;
                 makeVideoCard(video_data);
-            })
+            });
         };
         
         const makeVideoCard = (data) => {
@@ -90,22 +95,20 @@
         };
         
         const loadVideo = (data) => {
-            videoFrame.src = `https://www.youtube.com/embed/${data.id}`;
+            videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
             videoTitle.textContent = data.snippet.title;
             videoDescription.textContent = data.snippet.description;
             channelIcon.src = data.channelThumbnail;
             channelName.textContent = data.snippet.channelTitle;
         };
         
-        const searchInput = document.querySelector('.search-bar');
-        const searchBtn = document.querySelector('.search-btn');
-        let searchLink = "https://www.youtube.com/results?search_query=";
-        
         searchBtn.addEventListener('click', () => {
             if (searchInput.value.length) {
-                location.href = searchLink + searchInput.value;
+                fetchVideos(searchInput.value);
             }
         });
+        
+        fetchVideos();
     </script>
 </body>
 </html>
