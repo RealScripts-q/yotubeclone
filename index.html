@@ -24,7 +24,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        iframe {
+        #player {
             width: 100%;
             height: 350px;
             border-radius: 10px;
@@ -75,7 +75,7 @@
     <div class="container">
         <!-- Video Player Section -->
         <div class="video-section">
-            <iframe id="videoIframe" src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+            <div id="player"></div>
             <div class="video-details">
                 <p class="video-title">How to Make a Folder in GitHub Repository</p>
                 <div class="video-actions">
@@ -89,14 +89,14 @@
         <!-- Recommended Videos -->
         <div class="recommended">
             <h3>Recommended</h3>
-            <div class="recommended-video" onclick="changeVideo('3JZ_D3ELwOQ')">
+            <div class="recommended-video" onclick="loadVideo('3JZ_D3ELwOQ', 'Learn GitHub Basics')">
                 <img src="https://img.youtube.com/vi/3JZ_D3ELwOQ/0.jpg" alt="Video 2">
                 <div class="video-info">
                     <p>Learn GitHub Basics</p>
                     <p>1.2M views</p>
                 </div>
             </div>
-            <div class="recommended-video" onclick="changeVideo('kxqZLVhDyVc')">
+            <div class="recommended-video" onclick="loadVideo('kxqZLVhDyVc', 'Git & GitHub Tutorial')">
                 <img src="https://img.youtube.com/vi/kxqZLVhDyVc/0.jpg" alt="Video 3">
                 <div class="video-info">
                     <p>Git & GitHub Tutorial</p>
@@ -107,8 +107,27 @@
     </div>
 
     <script>
-        function changeVideo(videoId) {
-            document.getElementById('videoIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        let player;
+        
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '350',
+                width: '100%',
+                videoId: 'dQw4w9WgXcQ',  // Default video
+                playerVars: { 'autoplay': 1, 'controls': 1 },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            event.target.playVideo();
+        }
+
+        function loadVideo(videoId, title) {
+            player.loadVideoById(videoId);
+            document.querySelector('.video-title').textContent = title;
         }
 
         document.getElementById('likeBtn').addEventListener('click', function() {
@@ -121,8 +140,13 @@
 
         document.getElementById('commentBtn').addEventListener('click', function() {
             alert('Redirecting to comments section.');
-            window.open(`https://www.youtube.com/watch?v=${document.getElementById('videoIframe').src.split('/')[4]}#comments`, '_blank');
+            window.open(`https://www.youtube.com/watch?v=${player.getVideoData().video_id}#comments`, '_blank');
         });
+
+        // Load YouTube API Script
+        const script = document.createElement('script');
+        script.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(script);
     </script>
 
 </body>
