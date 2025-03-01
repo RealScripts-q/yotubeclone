@@ -30,6 +30,7 @@
             display: flex;
             max-width: 1200px;
             margin: 20px auto;
+            flex-wrap: wrap;
         }
         .video-player {
             flex: 3;
@@ -41,6 +42,9 @@
         .video-container {
             flex: 1;
             margin-left: 20px;
+            flex-wrap: wrap;
+            display: flex;
+            flex-direction: column;
         }
         .video {
             display: flex;
@@ -68,10 +72,13 @@
         }
         /* New styles for channel page */
         .channel-page {
+            width: 100%;
             padding: 20px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin-bottom: 20px;
         }
         .banner {
             width: 100%;
@@ -101,6 +108,20 @@
         .subscribe-btn:hover {
             background-color: #cc0000;
         }
+        .channel-video-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .channel-page.full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #fff;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -120,7 +141,7 @@
                     <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
                 </div>
             </div>
-            <div class="video-container" id="channel-videos"></div>
+            <div class="channel-video-list" id="channel-videos"></div>
         </div>
 
         <!-- Video Player Section -->
@@ -262,12 +283,42 @@
             .catch(err => console.log(err));
         };
 
-        searchBtn.addEventListener('click', () => {
-            if (searchInput.value.length) {
-                fetchVideos(searchInput.value);
+        const searchChannel = () => {
+            let searchQuery = searchInput.value.trim();
+            if (searchQuery.startsWith('@')) {
+                // Extract channel name after @ symbol
+                const channelName = searchQuery.slice(1);
+                fetchChannelPageByName(channelName);
+            } else {
+                fetchVideos(searchQuery);
+            }
+        };
+
+        const fetchChannelPageByName = (channelName) => {
+            fetch(channel_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet,contentDetails',
+                forUsername: channelName
+            }))
+            .then(res => res.json())
+            .then(data => {
+                if (data.items.length > 0) {
+                    const channelId = data.items[0].id;
+                    fetchChannelPage(channelId);
+                } else {
+                    alert('Channel not found');
+                }
+            })
+            .catch(err => console.log(err));
+        };
+
+        searchBtn.addEventListener('click', searchChannel);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                searchChannel();
             }
         });
-        
+
         fetchVideos();
     </script>
 </body>
