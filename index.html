@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Clone</title>
+    <title>YouTube Clone - Channel Page</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         body {
@@ -66,6 +66,41 @@
             cursor: pointer;
             padding: 10px;
         }
+        /* New styles for channel page */
+        .channel-page {
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .banner {
+            width: 100%;
+            height: 200px;
+            background-color: #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .channel-details {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .channel-details img {
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin-right: 20px;
+        }
+        .subscribe-btn {
+            background-color: #ff0000;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .subscribe-btn:hover {
+            background-color: #cc0000;
+        }
     </style>
 </head>
 <body>
@@ -74,6 +109,21 @@
         <button class="search-btn">Search</button>
     </header>
     <div class="container">
+        <!-- Channel Page Section -->
+        <div class="channel-page" id="channel-page">
+            <div class="banner" id="channel-banner"></div>
+            <div class="channel-details">
+                <img id="channel-profile" src="" alt="Channel Profile Picture">
+                <div>
+                    <h2 id="channel-title"></h2>
+                    <p id="channel-description"></p>
+                    <button class="subscribe-btn" id="subscribe-btn">Subscribe</button>
+                </div>
+            </div>
+            <div class="video-container" id="channel-videos"></div>
+        </div>
+
+        <!-- Video Player Section -->
         <div class="video-player">
             <iframe id="video-frame" width="800" height="450" src="" frameborder="0" allowfullscreen></iframe>
             <h2 id="video-title"></h2>
@@ -89,11 +139,17 @@
                 <button><img src="comment.png" alt="Comment"></button>
             </div>
         </div>
-        <div class="video-container"></div>
     </div>
     
     <script>
         const videoCardContainer = document.querySelector('.video-container');
+        const channelPage = document.getElementById('channel-page');
+        const channelBanner = document.getElementById('channel-banner');
+        const channelProfile = document.getElementById('channel-profile');
+        const channelTitle = document.getElementById('channel-title');
+        const channelDescription = document.getElementById('channel-description');
+        const channelVideos = document.getElementById('channel-videos');
+        const subscribeBtn = document.getElementById('subscribe-btn');
         const videoFrame = document.getElementById('video-frame');
         const videoTitle = document.getElementById('video-title');
         const videoDescription = document.getElementById('video-description');
@@ -101,11 +157,12 @@
         const channelName = document.getElementById('channel-name');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
-        
+
         let api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let video_http = "https://www.googleapis.com/youtube/v3/search?";
         let channel_http = "https://www.googleapis.com/youtube/v3/channels?";
-        
+        let playlist_http = "https://www.googleapis.com/youtube/v3/playlistItems?";
+
         const fetchVideos = (query = "") => {
             videoCardContainer.innerHTML = "";
             fetch(video_http + new URLSearchParams({
@@ -123,7 +180,7 @@
             })
             .catch(err => console.log(err));
         };
-        
+
         const getChannelIcon = (video_data) => {
             fetch(channel_http + new URLSearchParams({
                 key: api_key,
@@ -136,7 +193,7 @@
                 makeVideoCard(video_data);
             });
         };
-        
+
         const makeVideoCard = (data) => {
             let videoCard = document.createElement('div');
             videoCard.classList.add('video');
@@ -155,7 +212,7 @@
             });
             videoCardContainer.appendChild(videoCard);
         };
-        
+
         const loadVideo = (data) => {
             videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
             videoTitle.textContent = data.snippet.title;
@@ -164,11 +221,47 @@
             channelName.textContent = data.snippet.channelTitle;
             channelName.dataset.channelId = data.snippet.channelId;
         };
-        
+
         channelName.addEventListener('click', () => {
-            fetchVideos(channelName.dataset.channelId);
+            fetchChannelPage(channelName.dataset.channelId);
         });
-        
+
+        const fetchChannelPage = (channelId) => {
+            fetch(channel_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet,contentDetails',
+                id: channelId
+            }))
+            .then(res => res.json())
+            .then(data => {
+                const channelData = data.items[0].snippet;
+                const bannerUrl = channelData.thumbnails.maxres ? channelData.thumbnails.maxres.url : channelData.thumbnails.high.url;
+                channelBanner.style.backgroundImage = `url(${bannerUrl})`;
+                channelProfile.src = channelData.thumbnails.default.url;
+                channelTitle.textContent = channelData.title;
+                channelDescription.textContent = channelData.description;
+                loadChannelVideos(channelId);
+            })
+            .catch(err => console.log(err));
+        };
+
+        const loadChannelVideos = (channelId) => {
+            channelVideos.innerHTML = "";
+            fetch(playlist_http + new URLSearchParams({
+                key: api_key,
+                part: 'snippet',
+                maxResults: 10,
+                playlistId: channelId
+            }))
+            .then(res => res.json())
+            .then(data => {
+                data.items.forEach(item => {
+                    makeVideoCard(item.snippet);
+                });
+            })
+            .catch(err => console.log(err));
+        };
+
         searchBtn.addEventListener('click', () => {
             if (searchInput.value.length) {
                 fetchVideos(searchInput.value);
