@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Clone - Channel Page</title>
+    <title>YouTube Clone - Channel and Video Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,7 +31,7 @@
             margin: 20px auto;
             flex-wrap: wrap;
         }
-        .video-container {
+        .video-container, .channel-container {
             flex: 1;
             margin-left: 20px;
             display: grid;
@@ -39,7 +39,7 @@
             grid-gap: 20px;
             flex-wrap: wrap;
         }
-        .video {
+        .video, .channel {
             display: flex;
             flex-direction: column;
             cursor: pointer;
@@ -82,11 +82,12 @@
 </head>
 <body>
     <header>
-        <input type="text" class="search-bar" placeholder="Search...">
+        <input type="text" class="search-bar" placeholder="Search for videos or channels...">
         <button class="search-btn">Search</button>
     </header>
     <div class="container">
         <div class="video-container" id="video-container"></div>
+        <div class="channel-container" id="channel-container"></div>
     </div>
 
     <div class="video-player" id="video-player">
@@ -109,6 +110,7 @@
 
     <script>
         const videoContainer = document.getElementById('video-container');
+        const channelContainer = document.getElementById('channel-container');
         const searchInput = document.querySelector('.search-bar');
         const searchBtn = document.querySelector('.search-btn');
         const videoPlayer = document.getElementById('video-player');
@@ -121,20 +123,25 @@
         const api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         const video_http = "https://www.googleapis.com/youtube/v3/search?";
 
-        const fetchVideos = (query = "") => {
+        const fetchVideosAndChannels = (query = "") => {
             videoContainer.innerHTML = "";
+            channelContainer.innerHTML = "";
             let params = new URLSearchParams({
                 key: api_key,
                 part: 'snippet',
                 q: query,
                 maxResults: 20,
-                type: 'video'
+                type: 'video,channel'
             });
             fetch(video_http + params)
             .then(res => res.json())
             .then(data => {
                 data.items.forEach(item => {
-                    makeVideoCard(item);
+                    if (item.id.kind === "youtube#video") {
+                        makeVideoCard(item);
+                    } else if (item.id.kind === "youtube#channel") {
+                        makeChannelCard(item);
+                    }
                 });
             })
             .catch(err => console.log(err));
@@ -154,6 +161,19 @@
             videoContainer.appendChild(videoCard);
         };
 
+        const makeChannelCard = (data) => {
+            let channelCard = document.createElement('div');
+            channelCard.classList.add('channel');
+            channelCard.innerHTML = `
+                <img src="${data.snippet.thumbnails.default.url}" class="channel-icon" alt="">
+                <div class="content">
+                    <h4 class="title">${data.snippet.title}</h4>
+                </div>
+            `;
+            channelCard.onclick = () => openChannel(data);
+            channelContainer.appendChild(channelCard);
+        };
+
         const openVideo = (data) => {
             videoPlayer.style.display = "block";
             videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
@@ -167,10 +187,14 @@
                 });
         };
 
+        const openChannel = (data) => {
+            alert(`Open channel page for: ${data.snippet.title}`);
+        };
+
         searchBtn.addEventListener('click', () => {
             let query = searchInput.value.trim();
             if (query) {
-                fetchVideos(query);
+                fetchVideosAndChannels(query);
             }
         });
 
