@@ -17,13 +17,11 @@
         #nextBtn { background: #dc3545; color: #fff; }
         #submitCampaign { background: #007bff; color: #fff; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
-        .message { font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Earn Coins by Watching Videos</h2>
-        <div id="message" class="message">Watch to the end to get coins and see next campaign</div>
         <div id="videoContainer">
             <iframe id="videoFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
@@ -90,18 +88,12 @@
         function loadCampaign(index) {
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
+            document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?enablejsapi=1&autoplay=0&key=${API_KEY}`;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
             timer = campaign.watchTime;
             document.getElementById("timer").textContent = timer;
             // Disable "Next" button initially
             document.getElementById("nextBtn").disabled = true;
-            document.getElementById("message").textContent = "Watch to the end to get coins and see next campaign";
-
-            // Extract videoId from the campaign URL and create an embed URL
-            let videoId = extractVideoID(campaign.videoUrl);
-            if (videoId) {
-                player.loadVideoById(videoId); // Load the video with the YouTube Player API
-            }
         }
 
         function startTimer() {
@@ -165,7 +157,7 @@
             localStorage.setItem("coins", coins);
             let videoId = extractVideoID(url);
             if (videoId) {
-                campaigns.push({ videoUrl: url, videoId, views, watchTime });
+                campaigns.push({ videoId, views, watchTime });
                 localStorage.setItem("campaigns", JSON.stringify(campaigns));
                 document.getElementById("totalCampaigns").textContent = campaigns.length;
             }
