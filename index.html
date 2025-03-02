@@ -5,21 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View-for-View System</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .container { max-width: 600px; margin: auto; text-align: center; }
-        video { width: 100%; }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { max-width: 600px; margin: auto; }
+        iframe { width: 100%; height: 315px; }
         .hidden { display: none; }
+        .campaign-info { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .campaign-info p { margin: 0; }
+        .controls { display: flex; justify-content: space-around; margin-top: 10px; }
+        button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Earn Coins by Watching Videos</h2>
         <div id="videoContainer">
-            <iframe id="videoFrame" width="560" height="315" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <iframe id="videoFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+        <div class="campaign-info">
+            <p>+<span id="rewardCoins">0</span> Coins</p>
+            <p>Autoplay (<span id="campaignProgress">0</span>/<span id="totalCampaigns">0</span>)</p>
         </div>
         <p>Watch Time Remaining: <span id="timer">0</span> seconds</p>
-        <p>Views Remaining: <span id="viewsRemaining">0</span></p>
-        <button id="playBtn">Play</button>
+        <div class="controls">
+            <button id="playBtn">Play</button>
+            <button id="nextBtn">See Next</button>
+        </div>
         <p>Coins: <span id="coins">2000</span></p>
         
         <h2>Create a Campaign</h2>
@@ -31,16 +41,27 @@
 
     <script>
         const API_KEY = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
-        let coins = 2000;
+        let coins = parseInt(localStorage.getItem("coins")) || 2000;
+        let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+        let currentCampaignIndex = 0;
         let timer = 0;
         let interval;
-        let viewsRequired = 0;
-        let currentWatchTime = 0;
         let videoPlaying = false;
-        let viewsRemaining = 0;
+
+        document.getElementById("coins").textContent = coins;
+        document.getElementById("totalCampaigns").textContent = campaigns.length;
+
+        function loadCampaign(index) {
+            if (campaigns.length === 0) return;
+            let campaign = campaigns[index];
+            document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
+            document.getElementById("timer").textContent = campaign.watchTime;
+            document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
+            timer = campaign.watchTime;
+        }
 
         document.getElementById("playBtn").addEventListener("click", () => {
-            if (!videoPlaying && viewsRemaining > 0) {
+            if (!videoPlaying) {
                 videoPlaying = true;
                 startTimer();
             }
@@ -48,24 +69,23 @@
 
         function startTimer() {
             let timerElement = document.getElementById("timer");
-            timerElement.textContent = currentWatchTime;
             interval = setInterval(() => {
-                if (currentWatchTime > 0) {
-                    currentWatchTime--;
-                    timerElement.textContent = currentWatchTime;
+                if (timer > 0) {
+                    timer--;
+                    timerElement.textContent = timer;
                 } else {
                     clearInterval(interval);
-                    coins += 100; // Reward coins after watching
+                    coins += campaigns[currentCampaignIndex].watchTime * 10;
                     document.getElementById("coins").textContent = coins;
-                    viewsRemaining--;
-                    document.getElementById("viewsRemaining").textContent = viewsRemaining;
-                    videoPlaying = false;
-                    if (viewsRemaining <= 0) {
-                        alert("All required views have been completed! Moving to the next campaign.");
-                        document.getElementById("videoFrame").src = "";
-                    } else {
-                        alert("Watch time completed! Coins awarded.");
+                    localStorage.setItem("coins", coins);
+                    campaigns[currentCampaignIndex].views--;
+                    if (campaigns[currentCampaignIndex].views === 0) {
+                        campaigns.splice(currentCampaignIndex, 1);
                     }
+                    localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                    document.getElementById("totalCampaigns").textContent = campaigns.length;
+                    document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
+                    alert("Watch time completed! Coins awarded.");
                 }
             }, 1000);
         }
@@ -79,28 +99,36 @@
                 alert("Minimum views: 10, Minimum watch time: 45s");
                 return;
             }
-            let cost = views * (watchTime / 5);
+            let cost = watchTime * views / 5;
             if (coins < cost) {
                 alert("Not enough coins!");
                 return;
             }
-
             coins -= cost;
             document.getElementById("coins").textContent = coins;
-            viewsRequired = views;
-            viewsRemaining = views;
-            currentWatchTime = watchTime;
-            document.getElementById("timer").textContent = currentWatchTime;
-            document.getElementById("viewsRemaining").textContent = viewsRemaining;
+            localStorage.setItem("coins", coins);
             let videoId = extractVideoID(url);
             if (videoId) {
-                document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
+                campaigns.push({ videoId, views, watchTime });
+                localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                document.getElementById("totalCampaigns").textContent = campaigns.length;
             }
         });
 
         function extractVideoID(url) {
             let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/|v\/))([^&?#]+)/);
             return match ? match[1] : null;
+        }
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            if (currentCampaignIndex < campaigns.length - 1) {
+                currentCampaignIndex++;
+                loadCampaign(currentCampaignIndex);
+            }
+        });
+
+        if (campaigns.length > 0) {
+            loadCampaign(currentCampaignIndex);
         }
     </script>
 </body>
