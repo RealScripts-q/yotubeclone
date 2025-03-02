@@ -49,49 +49,73 @@
         let coins = parseInt(localStorage.getItem("coins")) || 2000;
         let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
         let currentCampaignIndex = parseInt(localStorage.getItem("currentCampaignIndex")) || 0;
-        let timer = parseInt(localStorage.getItem("timer")) || 0;
+        let timer = 0;
         let interval;
         let videoPlaying = false;
+        let player;
 
         document.getElementById("coins").textContent = coins;
         document.getElementById("totalCampaigns").textContent = campaigns.length;
+
+        // Load YouTube API
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player("videoFrame", {
+                events: {
+                    "onStateChange": onPlayerStateChange,
+                    "onReady": onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            loadCampaign(currentCampaignIndex); // Load the first campaign when player is ready
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                // Video is playing, start the timer
+                if (!videoPlaying) {
+                    videoPlaying = true;
+                    startTimer();
+                }
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                // Video is paused or ended, stop the timer
+                videoPlaying = false;
+                clearInterval(interval);
+            }
+        }
 
         function loadCampaign(index) {
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
             document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
-            timer = localStorage.getItem("timer") ? parseInt(localStorage.getItem("timer")) : campaign.watchTime;
+            timer = campaign.watchTime;
             document.getElementById("timer").textContent = timer;
         }
-
-        document.getElementById("playBtn").addEventListener("click", () => {
-            if (!videoPlaying) {
-                videoPlaying = true;
-                startTimer();
-            }
-        });
 
         function startTimer() {
             let timerElement = document.getElementById("timer");
             interval = setInterval(() => {
-                if (timer > 0) {
-                    timer--;
-                    timerElement.textContent = timer;
-                    localStorage.setItem("timer", timer); // Save the timer in localStorage
-                } else {
-                    clearInterval(interval);
-                    coins += campaigns[currentCampaignIndex].watchTime * 10;
-                    document.getElementById("coins").textContent = coins;
-                    localStorage.setItem("coins", coins);
-                    campaigns[currentCampaignIndex].views--;
-                    if (campaigns[currentCampaignIndex].views === 0) {
-                        campaigns.splice(currentCampaignIndex, 1);
+                if (videoPlaying && player.getCurrentTime) {
+                    let currentTime = Math.floor(player.getCurrentTime()); // Get the current video time
+                    let remainingTime = timer - currentTime;
+                    if (remainingTime > 0) {
+                        timerElement.textContent = remainingTime;
+                    } else {
+                        clearInterval(interval);
+                        coins += campaigns[currentCampaignIndex].watchTime * 10;
+                        document.getElementById("coins").textContent = coins;
+                        localStorage.setItem("coins", coins);
+                        campaigns[currentCampaignIndex].views--;
+                        if (campaigns[currentCampaignIndex].views === 0) {
+                            campaigns.splice(currentCampaignIndex, 1);
+                        }
+                        localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                        document.getElementById("totalCampaigns").textContent = campaigns.length;
+                        document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
+                        alert("Watch time completed! Coins awarded.");
                     }
-                    localStorage.setItem("campaigns", JSON.stringify(campaigns));
-                    document.getElementById("totalCampaigns").textContent = campaigns.length;
-                    document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
-                    alert("Watch time completed! Coins awarded.");
                 }
             }, 1000);
         }
@@ -155,6 +179,13 @@
         if (campaigns.length > 0) {
             loadCampaign(currentCampaignIndex);
         }
+
+        // Load the YouTube API script asynchronously
+        (function() {
+            var script = document.createElement("script");
+            script.src = "https://www.youtube.com/iframe_api";
+            document.body.appendChild(script);
+        })();
     </script>
 </body>
 </html>
