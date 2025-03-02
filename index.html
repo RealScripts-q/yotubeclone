@@ -18,6 +18,7 @@
             <iframe id="videoFrame" width="560" height="315" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
         <p>Watch Time Remaining: <span id="timer">0</span> seconds</p>
+        <p>Views Remaining: <span id="viewsRemaining">0</span></p>
         <button id="playBtn">Play</button>
         <p>Coins: <span id="coins">2000</span></p>
         
@@ -36,9 +37,10 @@
         let viewsRequired = 0;
         let currentWatchTime = 0;
         let videoPlaying = false;
+        let viewsRemaining = 0;
 
         document.getElementById("playBtn").addEventListener("click", () => {
-            if (!videoPlaying) {
+            if (!videoPlaying && viewsRemaining > 0) {
                 videoPlaying = true;
                 startTimer();
             }
@@ -55,7 +57,15 @@
                     clearInterval(interval);
                     coins += 100; // Reward coins after watching
                     document.getElementById("coins").textContent = coins;
-                    alert("Watch time completed! Coins awarded.");
+                    viewsRemaining--;
+                    document.getElementById("viewsRemaining").textContent = viewsRemaining;
+                    videoPlaying = false;
+                    if (viewsRemaining <= 0) {
+                        alert("All required views have been completed! Moving to the next campaign.");
+                        document.getElementById("videoFrame").src = "";
+                    } else {
+                        alert("Watch time completed! Coins awarded.");
+                    }
                 }
             }, 1000);
         }
@@ -78,8 +88,10 @@
             coins -= cost;
             document.getElementById("coins").textContent = coins;
             viewsRequired = views;
+            viewsRemaining = views;
             currentWatchTime = watchTime;
-            document.getElementById("timer").textContent = currentWatchTime; // Update UI with the watch time
+            document.getElementById("timer").textContent = currentWatchTime;
+            document.getElementById("viewsRemaining").textContent = viewsRemaining;
             let videoId = extractVideoID(url);
             if (videoId) {
                 document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
