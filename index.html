@@ -14,6 +14,7 @@
         button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 5px; font-size: 16px; }
         #playBtn { background: #28a745; color: #fff; }
         #nextBtn { background: #dc3545; color: #fff; }
+        #autoPlayBtn { background: #ffc107; color: #fff; }
         #submitCampaign { background: #007bff; color: #fff; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
     </style>
@@ -31,6 +32,7 @@
         <p>Watch Time Remaining: <span id="timer">0</span> seconds</p>
         <div class="controls">
             <button id="playBtn">Play</button>
+            <button id="autoPlayBtn">Auto Play</button>
             <button id="nextBtn">See Next</button>
         </div>
         <p>Coins: <span id="coins">2000</span></p>
@@ -46,8 +48,8 @@
         const API_KEY = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let coins = parseInt(localStorage.getItem("coins")) || 2000;
         let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
-        let currentCampaignIndex = 0;
-        let timer = 0;
+        let currentCampaignIndex = parseInt(localStorage.getItem("currentCampaignIndex")) || 0;
+        let timer = parseInt(localStorage.getItem("timer")) || 0;
         let interval;
         let videoPlaying = false;
 
@@ -58,9 +60,9 @@
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
             document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
-            document.getElementById("timer").textContent = campaign.watchTime;
+            document.getElementById("timer").textContent = timer;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
-            timer = campaign.watchTime;
+            timer = timer || campaign.watchTime;
         }
 
         document.getElementById("playBtn").addEventListener("click", () => {
@@ -76,6 +78,7 @@
                 if (timer > 0) {
                     timer--;
                     timerElement.textContent = timer;
+                    localStorage.setItem("timer", timer); // Save the timer in localStorage
                 } else {
                     clearInterval(interval);
                     coins += campaigns[currentCampaignIndex].watchTime * 10;
@@ -127,6 +130,25 @@
             if (currentCampaignIndex < campaigns.length - 1) {
                 currentCampaignIndex++;
                 loadCampaign(currentCampaignIndex);
+                localStorage.setItem("currentCampaignIndex", currentCampaignIndex); // Save current campaign index
+            }
+        });
+
+        document.getElementById("autoPlayBtn").addEventListener("click", () => {
+            if (campaigns.length > 0) {
+                let campaign = campaigns[currentCampaignIndex];
+                coins += campaign.watchTime * 10;
+                localStorage.setItem("coins", coins);
+                document.getElementById("coins").textContent = coins;
+                campaigns[currentCampaignIndex].views--;
+                if (campaigns[currentCampaignIndex].views === 0) {
+                    campaigns.splice(currentCampaignIndex, 1);
+                }
+                localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                document.getElementById("totalCampaigns").textContent = campaigns.length;
+                localStorage.setItem("currentCampaignIndex", currentCampaignIndex); // Save current campaign index
+                loadCampaign(currentCampaignIndex);
+                alert("Auto play completed! Coins awarded.");
             }
         });
 
