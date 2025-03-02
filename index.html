@@ -3,149 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View for View</title>
+    <title>View-for-View System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #videoContainer { margin-top: 20px; }
-        #timer { font-size: 24px; margin: 10px; }
-        #coins { font-size: 20px; margin: 10px; }
-        #campaign { margin-top: 20px; display: none; }
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: auto; text-align: center; }
+        video { width: 100%; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <h1>View for View System</h1>
-    <div id="coins">Coins: <span id="coinCount">2000</span></div>
-    
-    <div id="videoContainer">
-        <iframe id="video" width="560" height="315" src="" frameborder="0" allowfullscreen></iframe>
-        <div id="timer">Time Left: NaN seconds</div>
+    <div class="container">
+        <h2>Earn Coins by Watching Videos</h2>
+        <div id="videoContainer">
+            <iframe id="videoFrame" width="560" height="315" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+        <p>Watch Time Remaining: <span id="timer">0</span> seconds</p>
+        <button id="playBtn">Play</button>
+        <p>Coins: <span id="coins">2000</span></p>
+        
+        <h2>Create a Campaign</h2>
+        <input type="text" id="videoUrl" placeholder="YouTube Video URL">
+        <input type="number" id="views" placeholder="Number of Views (Min: 10)">
+        <input type="number" id="watchTime" placeholder="Watch Time (Min: 45s)">
+        <button id="submitCampaign">Create Campaign</button>
     </div>
-    
-    <button onclick="startCampaign()">Start Campaign</button>
-    
-    <div id="campaign">
-        <h2>Create Campaign</h2>
-        <label>Video URL: <input type="text" id="videoUrl"></label><br>
-        <label>Views (10-5000): <input type="number" id="viewCount" min="10" max="5000"></label><br>
-        <label>Watch Time (45-50000 seconds, not needed for likes): <input type="number" id="watchTime" min="45" max="50000"></label><br>
-        <label>Campaign Type: 
-            <select id="campaignType" onchange="toggleWatchTime()">
-                <option value="view">View</option>
-                <option value="like">Like</option>
-                <option value="subscribe">Subscribe</option>
-            </select>
-        </label><br>
-        <button onclick="submitCampaign()">Submit</button>
-    </div>
-    
+
     <script>
+        const API_KEY = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let coins = 2000;
-        let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
-        let activeCampaign = null;
-        let countdown;
-        let player;
+        let timer = 0;
+        let interval;
+        let viewsRequired = 0;
+        let currentWatchTime = 0;
+        let videoPlaying = false;
 
-        function updateCoins(amount) {
-            coins += amount;
-            document.getElementById("coinCount").textContent = coins;
-        }
-
-        function extractVideoId(url) {
-            let match = url.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/) ||
-                        url.match(/(?:https?:\/\/)?youtu\.be\/([^?]+)/);
-            return match ? match[1] : null;
-        }
-
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('video', {
-                events: {
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.PLAYING) {
-                startTimer(activeCampaign.watchTime, activeCampaign.views);
-            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-                clearInterval(countdown);
+        document.getElementById("playBtn").addEventListener("click", () => {
+            if (!videoPlaying) {
+                videoPlaying = true;
+                startTimer();
             }
-        }
+        });
 
-        function loadNextCampaign() {
-            if (campaigns.length > 0) {
-                activeCampaign = campaigns.shift();
-                localStorage.setItem("campaigns", JSON.stringify(campaigns));
-                
-                let videoId = extractVideoId(activeCampaign.url);
-                if (videoId) {
-                    document.getElementById("video").src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+        function startTimer() {
+            let timerElement = document.getElementById("timer");
+            timerElement.textContent = currentWatchTime;
+            interval = setInterval(() => {
+                if (currentWatchTime > 0) {
+                    currentWatchTime--;
+                    timerElement.textContent = currentWatchTime;
                 } else {
-                    alert("Invalid YouTube URL");
-                }
-            } else {
-                activeCampaign = null;
-                document.getElementById("video").src = "";
-                document.getElementById("timer").textContent = "No active campaign";
-            }
-        }
-
-        function startTimer(duration, viewsNeeded) {
-            clearInterval(countdown);
-            let timeLeft = duration;
-            document.getElementById("timer").textContent = `Time Left: ${timeLeft} seconds`;
-            
-            countdown = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    document.getElementById("timer").textContent = `Time Left: ${timeLeft} seconds`;
-                } else {
-                    clearInterval(countdown);
-                    updateCoins(viewsNeeded * 10);
-                    alert("You earned coins!");
-                    loadNextCampaign();
+                    clearInterval(interval);
+                    coins += 100; // Reward coins after watching
+                    document.getElementById("coins").textContent = coins;
+                    alert("Watch time completed! Coins awarded.");
                 }
             }, 1000);
         }
 
-        function startCampaign() {
-            if (coins >= 10) {
-                document.getElementById("campaign").style.display = "block";
-            } else {
-                alert("Not enough coins!");
-            }
-        }
-        
-        function submitCampaign() {
+        document.getElementById("submitCampaign").addEventListener("click", () => {
             let url = document.getElementById("videoUrl").value;
-            let views = parseInt(document.getElementById("viewCount").value);
-            let type = document.getElementById("campaignType").value;
-            let watchTime = type === "like" ? 50 : parseInt(document.getElementById("watchTime").value);
-            
-            if (views < 10 || views > 5000 || (type !== "like" && (watchTime < 45 || watchTime > 50000))) {
-                alert("Invalid values. Check your inputs.");
+            let views = parseInt(document.getElementById("views").value);
+            let watchTime = parseInt(document.getElementById("watchTime").value);
+
+            if (views < 10 || watchTime < 45) {
+                alert("Minimum views: 10, Minimum watch time: 45s");
                 return;
             }
-            
-            let cost = views * 10;
-            if (coins >= cost) {
-                coins -= cost;
-                document.getElementById("coinCount").textContent = coins;
-                campaigns.push({ url, views, watchTime, type });
-                localStorage.setItem("campaigns", JSON.stringify(campaigns));
-                alert("Campaign submitted successfully!");
-                document.getElementById("campaign").style.display = "none";
-                if (!activeCampaign) loadNextCampaign();
-            } else {
-                alert("Not enough coins for this campaign.");
+            let cost = views * (watchTime / 5);
+            if (coins < cost) {
+                alert("Not enough coins!");
+                return;
             }
-        }
 
-        function toggleWatchTime() {
-            let type = document.getElementById("campaignType").value;
-            document.getElementById("watchTime").disabled = type === "like";
+            coins -= cost;
+            document.getElementById("coins").textContent = coins;
+            viewsRequired = views;
+            currentWatchTime = watchTime;
+            let videoId = extractVideoID(url);
+            if (videoId) {
+                document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
+            }
+        });
+
+        function extractVideoID(url) {
+            let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/|v\/))([^&?#]+)/);
+            return match ? match[1] : null;
         }
     </script>
-    <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
