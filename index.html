@@ -13,8 +13,8 @@
         .controls { display: flex; justify-content: space-around; margin-top: 10px; }
         button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 5px; font-size: 16px; }
         #playBtn { background: #28a745; color: #fff; }
-        #nextBtn { background: #dc3545; color: #fff; }
         #autoPlayBtn { background: #ffc107; color: #fff; }
+        #nextBtn { background: #dc3545; color: #fff; }
         #submitCampaign { background: #007bff; color: #fff; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
     </style>
@@ -88,7 +88,7 @@
         function loadCampaign(index) {
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
-            document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
+            document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?enablejsapi=1&autoplay=0&key=${API_KEY}`;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
             timer = campaign.watchTime;
             document.getElementById("timer").textContent = timer;
@@ -106,7 +106,7 @@
                         timerElement.textContent = remainingTime;
                     } else {
                         clearInterval(interval);
-                        coins += campaigns[currentCampaignIndex].watchTime * 10;
+                        coins += 110000; // Reward 110,000 coins after video finishes
                         document.getElementById("coins").textContent = coins;
                         localStorage.setItem("coins", coins);
                         campaigns[currentCampaignIndex].views--;
@@ -120,6 +120,13 @@
 
                         // Enable the "Next" button when the watch time is finished
                         document.getElementById("nextBtn").disabled = false;
+
+                        // Automatically go to next campaign
+                        if (currentCampaignIndex < campaigns.length - 1) {
+                            currentCampaignIndex++;
+                            loadCampaign(currentCampaignIndex);
+                            localStorage.setItem("currentCampaignIndex", currentCampaignIndex); // Save current campaign index
+                        }
                     }
                 }
             }, 1000);
@@ -130,15 +137,15 @@
             let views = parseInt(document.getElementById("views").value);
             let watchTime = parseInt(document.getElementById("watchTime").value);
 
-            if (views < 10 || watchTime < 45) {
-                alert("Minimum views: 10, Minimum watch time: 45s");
-                return;
-            }
-            let cost = watchTime * views / 5;
+            // Set fixed cost and reward for campaigns
+            let cost = 100000;
+            let reward = 110000;
+
             if (coins < cost) {
                 alert("Not enough coins!");
                 return;
             }
+
             coins -= cost;
             document.getElementById("coins").textContent = coins;
             localStorage.setItem("coins", coins);
@@ -166,7 +173,7 @@
         document.getElementById("autoPlayBtn").addEventListener("click", () => {
             if (campaigns.length > 0) {
                 let campaign = campaigns[currentCampaignIndex];
-                coins += campaign.watchTime * 10;
+                coins += 110000; // Reward 110,000 coins after video finishes
                 localStorage.setItem("coins", coins);
                 document.getElementById("coins").textContent = coins;
                 campaigns[currentCampaignIndex].views--;
