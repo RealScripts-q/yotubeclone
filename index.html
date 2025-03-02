@@ -3,216 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Clone - Channel and Video Search</title>
+    <title>View for View</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-        }
-        .search-bar {
-            flex-grow: 1;
-            padding: 8px;
-            margin-right: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .container {
-            display: flex;
-            max-width: 1200px;
-            margin: 20px auto;
-            flex-wrap: wrap;
-        }
-        .video-container, .channel-container {
-            flex: 1;
-            margin-left: 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 20px;
-            flex-wrap: wrap;
-        }
-        .video, .channel {
-            display: flex;
-            flex-direction: column;
-            cursor: pointer;
-        }
-        .thumbnail {
-            width: 100%;
-            height: 180px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .channel-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-        .actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 10px;
-        }
-        .video-player {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            width: 800px;
-            display: none;
-        }
-        .video-player iframe {
-            width: 100%;
-            height: 450px;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #videoContainer { margin-top: 20px; }
+        #timer { font-size: 24px; margin: 10px; }
+        #coins { font-size: 20px; margin: 10px; }
+        #campaign { margin-top: 20px; display: none; }
     </style>
 </head>
 <body>
-    <header>
-        <input type="text" class="search-bar" placeholder="Search for videos or channels...">
-        <button class="search-btn">Search</button>
-    </header>
-    <div class="container">
-        <div class="video-container" id="video-container"></div>
-        <div class="channel-container" id="channel-container"></div>
+    <h1>View for View System</h1>
+    <div id="coins">Coins: <span id="coinCount">2000</span></div>
+    
+    <div id="videoContainer">
+        <iframe id="video" width="560" height="315" src="" frameborder="0" allowfullscreen></iframe>
+        <div id="timer">Time Left: NaN seconds</div>
     </div>
-
-    <div class="video-player" id="video-player">
-        <iframe id="video-frame" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <div class="video-details">
-            <h4 id="video-title"></h4>
-            <p id="video-description"></p>
-            <div class="channel">
-                <img src="" id="channel-icon" class="channel-icon" alt="">
-                <span id="channel-name"></span>
-            </div>
-            <div class="actions">
-                <button onclick="likeVideo()">Like</button>
-                <button onclick="dislikeVideo()">Dislike</button>
-                <button onclick="subscribe()">Subscribe</button>
-                <button onclick="comment()">Comment</button>
-            </div>
-        </div>
+    
+    <button onclick="startCampaign()">Start Campaign</button>
+    
+    <div id="campaign">
+        <h2>Create Campaign</h2>
+        <label>Video URL: <input type="text" id="videoUrl"></label><br>
+        <label>Views (10-5000): <input type="number" id="viewCount" min="10" max="5000"></label><br>
+        <label>Watch Time (45-50000 seconds, not needed for likes): <input type="number" id="watchTime" min="45" max="50000"></label><br>
+        <label>Campaign Type: 
+            <select id="campaignType" onchange="toggleWatchTime()">
+                <option value="view">View</option>
+                <option value="like">Like</option>
+                <option value="subscribe">Subscribe</option>
+            </select>
+        </label><br>
+        <button onclick="submitCampaign()">Submit</button>
     </div>
-
+    
     <script>
-        const videoContainer = document.getElementById('video-container');
-        const channelContainer = document.getElementById('channel-container');
-        const searchInput = document.querySelector('.search-bar');
-        const searchBtn = document.querySelector('.search-btn');
-        const videoPlayer = document.getElementById('video-player');
-        const videoFrame = document.getElementById('video-frame');
-        const videoTitle = document.getElementById('video-title');
-        const videoDescription = document.getElementById('video-description');
-        const channelName = document.getElementById('channel-name');
-        const channelIcon = document.getElementById('channel-icon');
+        let coins = 2000;
+        let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+        let activeCampaign = null;
+        let countdown;
+        let player;
 
-        const api_key = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
-        const video_http = "https://www.googleapis.com/youtube/v3/search?";
+        function updateCoins(amount) {
+            coins += amount;
+            document.getElementById("coinCount").textContent = coins;
+        }
 
-        const fetchVideosAndChannels = (query = "") => {
-            videoContainer.innerHTML = "";
-            channelContainer.innerHTML = "";
-            let params = new URLSearchParams({
-                key: api_key,
-                part: 'snippet',
-                q: query,
-                maxResults: 20,
-                type: 'video,channel'
+        function extractVideoId(url) {
+            let match = url.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/) ||
+                        url.match(/(?:https?:\/\/)?youtu\.be\/([^?]+)/);
+            return match ? match[1] : null;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('video', {
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
             });
-            fetch(video_http + params)
-            .then(res => res.json())
-            .then(data => {
-                data.items.forEach(item => {
-                    if (item.id.kind === "youtube#video") {
-                        makeVideoCard(item);
-                    } else if (item.id.kind === "youtube#channel") {
-                        makeChannelCard(item);
-                    }
-                });
-            })
-            .catch(err => console.log(err));
-        };
+        }
 
-        const makeVideoCard = (data) => {
-            let videoCard = document.createElement('div');
-            videoCard.classList.add('video');
-            videoCard.innerHTML = `
-                <img src="${data.snippet.thumbnails.high.url}" class="thumbnail" alt="">
-                <div class="content">
-                    <h4 class="title">${data.snippet.title}</h4>
-                    <p class="channel-name">${data.snippet.channelTitle}</p>
-                </div>
-            `;
-            videoCard.onclick = () => openVideo(data);
-            videoContainer.appendChild(videoCard);
-        };
-
-        const makeChannelCard = (data) => {
-            let channelCard = document.createElement('div');
-            channelCard.classList.add('channel');
-            channelCard.innerHTML = `
-                <img src="${data.snippet.thumbnails.default.url}" class="channel-icon" alt="">
-                <div class="content">
-                    <h4 class="title">${data.snippet.title}</h4>
-                </div>
-            `;
-            channelCard.onclick = () => openChannel(data);
-            channelContainer.appendChild(channelCard);
-        };
-
-        const openVideo = (data) => {
-            videoPlayer.style.display = "block";
-            videoFrame.src = `https://www.youtube.com/embed/${data.id.videoId}`;
-            videoTitle.innerText = data.snippet.title;
-            videoDescription.innerText = data.snippet.description;
-            channelName.innerText = data.snippet.channelTitle;
-            channelIcon.src = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${data.snippet.channelId}&key=${api_key}`
-                .then(res => res.json())
-                .then(channelData => {
-                    channelIcon.src = channelData.items[0].snippet.thumbnails.default.url;
-                });
-        };
-
-        const openChannel = (data) => {
-            alert(`Open channel page for: ${data.snippet.title}`);
-        };
-
-        searchBtn.addEventListener('click', () => {
-            let query = searchInput.value.trim();
-            if (query) {
-                fetchVideosAndChannels(query);
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING) {
+                startTimer(activeCampaign.watchTime, activeCampaign.views);
+            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
+                clearInterval(countdown);
             }
-        });
+        }
 
-        const likeVideo = () => {
-            alert('Liked the video!');
-        };
+        function loadNextCampaign() {
+            if (campaigns.length > 0) {
+                activeCampaign = campaigns.shift();
+                localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                
+                let videoId = extractVideoId(activeCampaign.url);
+                if (videoId) {
+                    document.getElementById("video").src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+                } else {
+                    alert("Invalid YouTube URL");
+                }
+            } else {
+                activeCampaign = null;
+                document.getElementById("video").src = "";
+                document.getElementById("timer").textContent = "No active campaign";
+            }
+        }
 
-        const dislikeVideo = () => {
-            alert('Disliked the video!');
-        };
+        function startTimer(duration, viewsNeeded) {
+            clearInterval(countdown);
+            let timeLeft = duration;
+            document.getElementById("timer").textContent = `Time Left: ${timeLeft} seconds`;
+            
+            countdown = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    document.getElementById("timer").textContent = `Time Left: ${timeLeft} seconds`;
+                } else {
+                    clearInterval(countdown);
+                    updateCoins(viewsNeeded * 10);
+                    alert("You earned coins!");
+                    loadNextCampaign();
+                }
+            }, 1000);
+        }
 
-        const subscribe = () => {
-            alert('Subscribed to the channel!');
-        };
+        function startCampaign() {
+            if (coins >= 10) {
+                document.getElementById("campaign").style.display = "block";
+            } else {
+                alert("Not enough coins!");
+            }
+        }
+        
+        function submitCampaign() {
+            let url = document.getElementById("videoUrl").value;
+            let views = parseInt(document.getElementById("viewCount").value);
+            let type = document.getElementById("campaignType").value;
+            let watchTime = type === "like" ? 50 : parseInt(document.getElementById("watchTime").value);
+            
+            if (views < 10 || views > 5000 || (type !== "like" && (watchTime < 45 || watchTime > 50000))) {
+                alert("Invalid values. Check your inputs.");
+                return;
+            }
+            
+            let cost = views * 10;
+            if (coins >= cost) {
+                coins -= cost;
+                document.getElementById("coinCount").textContent = coins;
+                campaigns.push({ url, views, watchTime, type });
+                localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                alert("Campaign submitted successfully!");
+                document.getElementById("campaign").style.display = "none";
+                if (!activeCampaign) loadNextCampaign();
+            } else {
+                alert("Not enough coins for this campaign.");
+            }
+        }
 
-        const comment = () => {
-            alert('Opening comments section...');
-        };
+        function toggleWatchTime() {
+            let type = document.getElementById("campaignType").value;
+            document.getElementById("watchTime").disabled = type === "like";
+        }
     </script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
