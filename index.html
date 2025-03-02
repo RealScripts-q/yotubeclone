@@ -22,7 +22,7 @@
     <div class="container">
         <h2>Earn Coins by Watching Videos</h2>
         <div id="videoContainer">
-            <div id="player"></div>
+            <iframe id="videoFrame" width="100%" height="315" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
         <div class="campaign-info">
             <p>+<span id="rewardCoins">0</span> Coins</p>
@@ -51,27 +51,15 @@
         let timer = 0;
         let interval;
         let videoPlaying = false;
-        let player;
 
         document.getElementById("coins").textContent = coins;
         document.getElementById("totalCampaigns").textContent = campaigns.length;
 
-        // Initialize YouTube Player
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                width: '100%',
-                height: '315',
-                videoId: '',
-                events: {
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
+        // Function to load video by campaign
         function loadCampaign(index) {
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
-            player.loadVideoById(campaign.videoId);
+            document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
             document.getElementById("timer").textContent = campaign.watchTime;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
             timer = campaign.watchTime;
@@ -81,7 +69,7 @@
         document.getElementById("playBtn").addEventListener("click", () => {
             if (!videoPlaying) {
                 videoPlaying = true;
-                player.playVideo();
+                document.getElementById("videoFrame").contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
                 startTimer();
             }
         });
@@ -110,16 +98,6 @@
                     loadRandomCampaign(); // Automatically load next video
                 }
             }, 1000);
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.PLAYING && !videoPlaying) {
-                videoPlaying = true;
-                startTimer();
-            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                videoPlaying = false;
-                clearInterval(interval);
-            }
         }
 
         document.getElementById("submitCampaign").addEventListener("click", () => {
