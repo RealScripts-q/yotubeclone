@@ -79,6 +79,7 @@
             document.getElementById("coins").textContent = coins;
             viewsRequired = views;
             currentWatchTime = watchTime;
+            document.getElementById("timer").textContent = currentWatchTime; // Update UI with the watch time
             let videoId = extractVideoID(url);
             if (videoId) {
                 document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
