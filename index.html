@@ -60,9 +60,9 @@
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
             document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${campaign.videoId}?autoplay=1&enablejsapi=1&key=${API_KEY}`;
-            document.getElementById("timer").textContent = timer;
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
-            timer = timer || campaign.watchTime;
+            timer = localStorage.getItem("timer") ? parseInt(localStorage.getItem("timer")) : campaign.watchTime;
+            document.getElementById("timer").textContent = timer;
         }
 
         document.getElementById("playBtn").addEventListener("click", () => {
