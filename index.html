@@ -46,6 +46,7 @@
         const API_KEY = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let coins = parseInt(localStorage.getItem("coins")) || 2000;
         let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+        let watchedVideos = JSON.parse(localStorage.getItem("watchedVideos")) || [];
         let currentCampaignIndex = 0;
         let timer = 0;
         let interval;
@@ -86,9 +87,12 @@
                         campaigns.splice(currentCampaignIndex, 1);
                     }
                     localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                    watchedVideos.push(campaigns[currentCampaignIndex].videoId);
+                    localStorage.setItem("watchedVideos", JSON.stringify(watchedVideos));
                     document.getElementById("totalCampaigns").textContent = campaigns.length;
                     document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
                     alert("Watch time completed! Coins awarded.");
+                    loadRandomCampaign(); // Automatically load next video
                 }
             }, 1000);
         }
@@ -124,14 +128,25 @@
         }
 
         document.getElementById("nextBtn").addEventListener("click", () => {
-            if (currentCampaignIndex < campaigns.length - 1) {
-                currentCampaignIndex++;
-                loadCampaign(currentCampaignIndex);
-            }
+            loadRandomCampaign();
         });
 
-        if (campaigns.length > 0) {
+        function loadRandomCampaign() {
+            let unwatchedCampaigns = campaigns.filter(campaign => !watchedVideos.includes(campaign.videoId));
+
+            if (unwatchedCampaigns.length === 0) {
+                alert("No more videos to watch!");
+                return;
+            }
+
+            let randomIndex = Math.floor(Math.random() * unwatchedCampaigns.length);
+            let campaign = unwatchedCampaigns[randomIndex];
+            currentCampaignIndex = campaigns.findIndex(c => c.videoId === campaign.videoId);
             loadCampaign(currentCampaignIndex);
+        }
+
+        if (campaigns.length > 0) {
+            loadRandomCampaign();
         }
     </script>
 </body>
