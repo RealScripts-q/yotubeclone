@@ -17,11 +17,13 @@
         #nextBtn { background: #dc3545; color: #fff; }
         #submitCampaign { background: #007bff; color: #fff; }
         input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .message { font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Earn Coins by Watching Videos</h2>
+        <div id="message" class="message">Watch to the end to get coins and see next campaign</div>
         <div id="videoContainer">
             <iframe id="videoFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
@@ -94,6 +96,7 @@
             document.getElementById("timer").textContent = timer;
             // Disable "Next" button initially
             document.getElementById("nextBtn").disabled = true;
+            document.getElementById("message").textContent = "Watch to the end to get coins and see next campaign";
         }
 
         function startTimer() {
