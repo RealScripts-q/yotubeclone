@@ -146,6 +146,12 @@
                 return;
             }
 
+            // Clear existing campaigns from localStorage
+            localStorage.removeItem("campaigns");
+
+            // Save the new campaigns
+            campaigns = [];
+
             coins -= cost;
             document.getElementById("coins").textContent = coins;
             localStorage.setItem("coins", coins);
