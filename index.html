@@ -33,7 +33,7 @@
         <div class="controls">
             <button id="playBtn">Play</button>
             <button id="autoPlayBtn">Auto Play</button>
-            <button id="nextBtn">See Next</button>
+            <button id="nextBtn" disabled>See Next</button>
         </div>
         <p>Coins: <span id="coins">2000</span></p>
         
@@ -92,6 +92,8 @@
             document.getElementById("rewardCoins").textContent = campaign.watchTime * 10;
             timer = campaign.watchTime;
             document.getElementById("timer").textContent = timer;
+            // Disable "Next" button initially
+            document.getElementById("nextBtn").disabled = true;
         }
 
         function startTimer() {
@@ -115,6 +117,9 @@
                         document.getElementById("totalCampaigns").textContent = campaigns.length;
                         document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
                         alert("Watch time completed! Coins awarded.");
+
+                        // Enable the "Next" button when the watch time is finished
+                        document.getElementById("nextBtn").disabled = false;
                     }
                 }
             }, 1000);
