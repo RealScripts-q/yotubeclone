@@ -22,7 +22,7 @@
     <div class="container">
         <h2>Earn Coins by Watching Videos</h2>
         <div id="videoContainer">
-            <iframe id="videoFrame" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <iframe id="videoFrame" width="100%" height="315" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
         <div class="campaign-info">
             <p>+<span id="rewardCoins">0</span> Coins</p>
@@ -43,7 +43,7 @@
     </div>
 
     <script>
-        const API_KEY = "YOUR_YOUTUBE_API_KEY";
+        const API_KEY = "AIzaSyBkPGe5Omx22wstG3ISozc1XkFjqqY5idM";
         let coins = parseInt(localStorage.getItem("coins")) || 2000;
         let campaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
         let watchedVideos = JSON.parse(localStorage.getItem("watchedVideos")) || [];
@@ -55,6 +55,7 @@
         document.getElementById("coins").textContent = coins;
         document.getElementById("totalCampaigns").textContent = campaigns.length;
 
+        // Function to load video by campaign
         function loadCampaign(index) {
             if (campaigns.length === 0) return;
             let campaign = campaigns[index];
@@ -64,9 +65,11 @@
             timer = campaign.watchTime;
         }
 
+        // Play button event listener
         document.getElementById("playBtn").addEventListener("click", () => {
             if (!videoPlaying) {
                 videoPlaying = true;
+                document.getElementById("videoFrame").contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
                 startTimer();
             }
         });
@@ -90,13 +93,14 @@
                     watchedVideos.push(campaigns[currentCampaignIndex].videoId);
                     localStorage.setItem("watchedVideos", JSON.stringify(watchedVideos));
                     document.getElementById("totalCampaigns").textContent = campaigns.length;
+                    document.getElementById("campaignProgress").textContent = currentCampaignIndex + 1;
                     alert("Watch time completed! Coins awarded.");
-                    loadRandomCampaign();
+                    loadRandomCampaign(); // Automatically load next video
                 }
             }, 1000);
         }
 
-        document.getElementById("submitCampaign").addEventListener("click", async () => {
+        document.getElementById("submitCampaign").addEventListener("click", () => {
             let url = document.getElementById("videoUrl").value;
             let views = parseInt(document.getElementById("views").value);
             let watchTime = parseInt(document.getElementById("watchTime").value);
@@ -105,65 +109,53 @@
                 alert("Minimum views: 10, Minimum watch time: 45s");
                 return;
             }
-
-            let videoId = extractVideoID(url);
-            if (!videoId) {
-                alert("Invalid YouTube URL!");
-                return;
-            }
-
-            let videoDuration = await getVideoDuration(videoId);
-            if (watchTime > videoDuration) {
-                alert(`Video is too short! Max watch time allowed: ${videoDuration} seconds.`);
-                return;
-            }
-
             let cost = watchTime * views / 5;
             if (coins < cost) {
                 alert("Not enough coins!");
                 return;
             }
-
             coins -= cost;
             document.getElementById("coins").textContent = coins;
             localStorage.setItem("coins", coins);
-
-            campaigns.push({ videoId, views, watchTime });
-            localStorage.setItem("campaigns", JSON.stringify(campaigns));
-            document.getElementById("totalCampaigns").textContent = campaigns.length;
+            let videoId = extractVideoID(url);
+            if (videoId) {
+                campaigns.push({ videoId, views, watchTime });
+                localStorage.setItem("campaigns", JSON.stringify(campaigns));
+                document.getElementById("totalCampaigns").textContent = campaigns.length;
+            }
         });
-
-        async function getVideoDuration(videoId) {
-            let response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoId}&key=${API_KEY}`);
-            let data = await response.json();
-            if (data.items.length === 0) return 0;
-
-            let duration = data.items[0].contentDetails.duration;
-            return parseISO8601Duration(duration);
-        }
-
-        function parseISO8601Duration(duration) {
-            let match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-            let hours = match[1] ? parseInt(match[1]) * 3600 : 0;
-            let minutes = match[2] ? parseInt(match[2]) * 60 : 0;
-            let seconds = match[3] ? parseInt(match[3]) : 0;
-            return hours + minutes + seconds;
-        }
 
         function extractVideoID(url) {
             let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/|v\/))([^&?#]+)/);
             return match ? match[1] : null;
         }
 
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            loadRandomCampaign();
+        });
+
         function loadRandomCampaign() {
             let unwatchedCampaigns = campaigns.filter(campaign => !watchedVideos.includes(campaign.videoId));
+
             if (unwatchedCampaigns.length === 0) {
                 alert("No more videos to watch!");
                 return;
             }
+
             let randomIndex = Math.floor(Math.random() * unwatchedCampaigns.length);
-            loadCampaign(randomIndex);
+            let campaign = unwatchedCampaigns[randomIndex];
+            currentCampaignIndex = campaigns.findIndex(c => c.videoId === campaign.videoId);
+            loadCampaign(currentCampaignIndex);
         }
+
+        if (campaigns.length > 0) {
+            loadRandomCampaign();
+        }
+
+        // Load YouTube API script
+        const script = document.createElement('script');
+        script.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(script);
     </script>
 </body>
 </html>
